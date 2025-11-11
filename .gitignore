@@ -1,0 +1,7 @@
+# ignore microsoft office temporary files
+~$*
+# ignore macOS system files
+.DS_Store
+# ignore virtual environment folders
+venv/
+env/

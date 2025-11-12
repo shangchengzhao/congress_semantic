@@ -66,126 +66,148 @@ def write_materials(headers, rows, path=MATERIALS):
             writer.writerow(r)
 
 
-def parse_docx_into_numbered_entries(docx_path=DOCX):
+def parse_docx_by_candidate_names(docx_path, candidate_names):
+    """
+    Search for each candidate name in the document and extract their bio.
+    Names appear in underscore format like "Adam_Frisch".
+    Returns a dict mapping normalized candidate name to (original_name, bio_text).
+    """
     doc = Document(docx_path)
-    entries = []  # list of (name_text, body_text)
-
-    number_pattern = re.compile(r"^\s*(\d+)\.\s*(.+)$")
-
-    current_name = None
-    current_body_lines = []
-
-    for para in doc.paragraphs:
+    
+    # Get all text with paragraph indices
+    all_paragraphs = []
+    for idx, para in enumerate(doc.paragraphs):
         text = para.text.strip()
-        if not text:
-            # keep blank lines as paragraph separators in body
-            if current_name and current_body_lines:
-                current_body_lines.append("")
-            continue
-
-        m = number_pattern.match(text)
-        if m:
-            # New entry
-            # Save previous
-            if current_name is not None:
-                body = "\n".join(current_body_lines).strip()
-                entries.append((current_name, body))
-            # set new
-            name_text = m.group(2).strip()
-            current_name = name_text
-            current_body_lines = []
-        else:
-            # append to current body
-            if current_name is not None:
-                current_body_lines.append(text)
-            else:
-                # If doc doesn't start with number, ignore leading text
-                continue
-
-    # save last
-    if current_name is not None:
-        body = "\n".join(current_body_lines).strip()
-        entries.append((current_name, body))
-
-    # build mapping from normalized name to (orig_name, body)
+        all_paragraphs.append((idx, text))
+    
     mapping = {}
-    for orig_name, body in entries:
-        key = normalize_name(orig_name)
-        mapping[key] = (orig_name, body)
+    
+    for candidate in candidate_names:
+        # The candidate name format matches the document format (underscore)
+        # So we can search directly
+        norm_candidate = normalize_name(candidate)
+        
+        # Find paragraph that exactly matches this candidate's name
+        found_idx = None
+        found_text = None
+        
+        for idx, text in all_paragraphs:
+            # Check for exact match with candidate name
+            if text == candidate:
+                found_idx = idx
+                found_text = text
+                break
+            # Also try with spaces instead of underscores
+            elif text == candidate.replace('_', ' '):
+                found_idx = idx
+                found_text = text
+                break
+        
+        if found_idx is None:
+            # Try case-insensitive match
+            for idx, text in all_paragraphs:
+                if text.lower() == candidate.lower():
+                    found_idx = idx
+                    found_text = text
+                    break
+        
+        if found_idx is None:
+            continue
+        
+        # Extract bio content after this name
+        # Bio consists of sections: Educational Background, Career, Personal Information
+        # Stop when we hit another candidate name (a short line that's just a name)
+        bio_lines = []
+        
+        # Known section headings that are NOT candidate names
+        section_headings = ['Educational Background', 'Career', 'Personal Information']
+        
+        for idx in range(found_idx + 1, len(all_paragraphs)):
+            text = all_paragraphs[idx][1]
+            
+            if not text:
+                bio_lines.append('')
+                continue
+            
+            # Don't stop at section headings
+            if text in section_headings:
+                bio_lines.append(text)
+                continue
+            
+            # Check if this looks like another candidate name
+            # Candidate names have underscores (like Adam_Frisch) or are short capitalized names
+            if len(text) < 50:
+                # If it has underscores, likely a candidate name
+                if '_' in text:
+                    words = text.replace('_', ' ').split()
+                    if len(words) >= 2 and len(words) <= 5:
+                        # This is likely another candidate, stop here
+                        break
+                # If it's just 2-3 capitalized words without underscores, might also be a candidate
+                elif len(text.split()) >= 2 and len(text.split()) <= 4:
+                    words = text.split()
+                    capitalized = sum(1 for w in words if w and w[0].isupper())
+                    # All words capitalized and not a known section = likely a candidate
+                    if capitalized == len(words):
+                        # This is likely another candidate, stop here
+                        break
+            
+            bio_lines.append(text)
+        
+        bio_text = '\n'.join(bio_lines).strip()
+        if bio_text:
+            mapping[norm_candidate] = (found_text, bio_text)
+    
     return mapping
 
 
+
 def extract_sections_from_body(body_text: str) -> dict:
-    # Try to find the three sections by headings. Return dict with keys Educational Background, Career, Personal information
+    """
+    Extract the three sections: Educational Background, Career, and Personal information.
+    Section headings do NOT have colons after them.
+    """
     result = {"Educational Background":"", "Career":"", "Personal information":"", "full":""}
     result['full'] = body_text.strip()
     if not body_text:
         return result
 
-    # Build a case-insensitive pattern for known headings
-    headings_regex = re.compile(r"(^|\\n)(?P<h>\\s*(?:Educational Background|Education|Career|Professional Experience|Personal information|Personal Information|Personal Info)\\s*:\??)\\s*\\n", flags=re.I)
-
-    # If headings exist, split by lines and locate indices
-    # We'll also try a fallback by searching for heading tokens
     lines = body_text.splitlines()
-    # flatten lines to single string for regex search
-    text = "\n".join(lines)
-
-    # find possible heading locations with their normalized heading label
-    headings_positions = []  # list of (pos_index, label)
-
+    
+    # Find section headings (exact match, case-insensitive, no colon)
+    section_indices = []  # list of (line_idx, section_name)
+    
     for idx, line in enumerate(lines):
-        l = line.strip()
-        if not l:
+        line_stripped = line.strip()
+        if not line_stripped:
             continue
-        for canonical in ["Educational Background", "Career", "Personal information"]:
-            # match ignoring case and optional trailing ':'
-            if re.match(rf"^{canonical}\\s*:??$", l, flags=re.I):
-                headings_positions.append((idx, canonical))
-
-    if headings_positions:
-        # sort by position
-        headings_positions.sort()
-        for i, (pos, label) in enumerate(headings_positions):
-            start = pos+1
-            end = headings_positions[i+1][0] if i+1 < len(headings_positions) else len(lines)
-            section_text = "\n".join(lines[start:end]).strip()
-            result[label] = section_text
-        return result
-
-    # Fallback: try to split by heading tokens inside the text
-    # We'll search for tokens and split (Education, Career, Personal)
-    token_pattern = re.compile(r"(Educational Background|Education|Career|Professional Experience|Personal information|Personal Information|Personal Info)\\s*[:\n]", flags=re.I)
-    tokens = [(m.start(), m.group(1)) for m in token_pattern.finditer(text)]
-    if tokens:
-        tokens.sort()
-        for i, (pos, token) in enumerate(tokens):
-            start = pos + len(token)
-            end = tokens[i+1][0] if i+1 < len(tokens) else len(text)
-            chunk = text[start:end].strip("\n ")
-            # map token to canonical
-            if re.search(r"education", token, flags=re.I):
-                result['Educational Background'] += ("\n" + chunk).strip()
-            elif re.search(r"career|professional", token, flags=re.I):
-                result['Career'] += ("\n" + chunk).strip()
+        
+        # Check for exact matches to section headings
+        if re.match(r'^Educational\s+Background$', line_stripped, re.IGNORECASE):
+            section_indices.append((idx, 'Educational Background'))
+        elif re.match(r'^Career$', line_stripped, re.IGNORECASE):
+            section_indices.append((idx, 'Career'))
+        elif re.match(r'^Personal\s+[Ii]nformation$', line_stripped, re.IGNORECASE):
+            section_indices.append((idx, 'Personal information'))
+    
+    if section_indices:
+        # Extract content between section headings
+        section_indices.sort()
+        for i, (line_idx, section_name) in enumerate(section_indices):
+            start = line_idx + 1
+            # End is the start of the next section or end of document
+            if i + 1 < len(section_indices):
+                end = section_indices[i + 1][0]
             else:
-                result['Personal information'] += ("\n" + chunk).strip()
-        return result
-
-    # Final fallback: try to heuristically split into three approx equal parts
-    all_lines = [ln for ln in lines if ln.strip()]
-    if not all_lines:
-        return result
-    n = len(all_lines)
-    # split into up to three parts
-    a = int(n/3)
-    b = int(2*n/3)
-    part1 = "\n".join(all_lines[:a]).strip()
-    part2 = "\n".join(all_lines[a:b]).strip()
-    part3 = "\n".join(all_lines[b:]).strip()
-    result['Educational Background'] = part1
-    result['Career'] = part2
-    result['Personal information'] = part3
+                end = len(lines)
+            
+            section_lines = lines[start:end]
+            section_text = '\n'.join(section_lines).strip()
+            result[section_name] = section_text
+    else:
+        # No clear sections found, return full text
+        result['Educational Background'] = body_text
+    
     return result
 
 
@@ -194,76 +216,52 @@ def main():
 
     headers, rows = read_materials()
 
-    # 1) Update materials.csv bio_name values
-    updated_rows = []
+    # 1) Extract candidate names from bio_name column (format: bio/Adam_Frisch.txt)
     candidate_names = []
     for r in rows:
         bio_name = r.get('bio_name', '') or ''
-        # If bio_name already is like bio/*.txt, keep
+        # Extract candidate name from bio/*.txt format
         if bio_name.startswith('bio/') and bio_name.lower().endswith('.txt'):
-            # also extract candidate name
+            # Extract name from bio/Candidate_Name.txt -> Candidate_Name
             name = os.path.splitext(os.path.basename(bio_name))[0]
             candidate_names.append(name)
-            updated_rows.append(r)
-            continue
-        # If it looks like an image path, extract candidate
-        candidate = extract_candidate_name_from_path(bio_name)
-        if candidate:
-            new_bio = f"{BIO_DIR}/{candidate}.txt"
-            r['bio_name'] = new_bio
-            candidate_names.append(candidate)
-        else:
-            # keep as is
-            r['bio_name'] = bio_name
-        updated_rows.append(r)
+    
+    print(f"Extracted {len(candidate_names)} candidate names from {MATERIALS}")
 
-    # write back updated CSV
-    write_materials(headers, updated_rows)
-    print(f"Updated {len(updated_rows)} rows in {MATERIALS}")
-
-    # 2) Parse docx into numbered entries mapping
-    mapping = parse_docx_into_numbered_entries()
-    print(f"Parsed {len(mapping)} numbered entries from {DOCX}")
+    # 2) Parse docx by searching for candidate names
+    unique_candidates = sorted(set(candidate_names))
+    # Remove the special cases
+    unique_candidates = [c for c in unique_candidates if c not in ['*', 'fill_img']]
+    
+    mapping = parse_docx_by_candidate_names(DOCX, unique_candidates)
+    print(f"Found {len(mapping)} candidates in {DOCX}")
 
     # 3) For each candidate, find match and extract sections
     saved = 0
     unmatched = []
-    for candidate in sorted(set(candidate_names)):
+    for candidate in unique_candidates:
         norm_candidate = normalize_name(candidate)
-        match = None
-        # Direct match
-        if norm_candidate in mapping:
-            match = mapping[norm_candidate]
-        else:
-            # try fuzzy matches: iterate mapping keys and compare simplified tokens
-            for key, (orig_name, body) in mapping.items():
-                if norm_candidate == key:
-                    match = (orig_name, body)
-                    break
-            if not match:
-                # try contains: candidate name tokens in orig_name
-                for key, (orig_name, body) in mapping.items():
-                    if normalize_name(orig_name).find(norm_candidate) != -1 or norm_candidate.find(normalize_name(orig_name)) != -1:
-                        match = (orig_name, body)
-                        break
-        if not match:
+        
+        # Look up in mapping
+        if norm_candidate not in mapping:
             unmatched.append(candidate)
             continue
 
-        orig_name, body = match
+        orig_name, body = mapping[norm_candidate]
         sections = extract_sections_from_body(body)
+        
         # Create file contents with clear headings
         parts = []
-        eb = sections.get('Educational Background') or sections.get('Education') or ''
-        car = sections.get('Career') or sections.get('Professional Experience') or ''
-        pi = sections.get('Personal information') or sections.get('Personal Information') or ''
+        eb = sections.get('Educational Background', '').strip()
+        car = sections.get('Career', '').strip()
+        pi = sections.get('Personal information', '').strip()
 
         if eb:
-            parts.append('Educational Background:\n' + eb.strip())
+            parts.append('Educational Background\n' + eb)
         if car:
-            parts.append('Career:\n' + car.strip())
+            parts.append('Career\n' + car)
         if pi:
-            parts.append('Personal information:\n' + pi.strip())
+            parts.append('Personal Information\n' + pi)
         if not parts:
             # fallback to full body
             parts = [body.strip()]
@@ -278,8 +276,10 @@ def main():
     print(f"\nSaved {saved} bios. {len(unmatched)} unmatched candidates.")
     if unmatched:
         print("Unmatched candidates (no entry found in docx):")
-        for u in unmatched[:200]:
+        for u in unmatched[:50]:
             print(" - ", u)
+        if len(unmatched) > 50:
+            print(f"... and {len(unmatched) - 50} more")
 
 if __name__ == '__main__':
     main()

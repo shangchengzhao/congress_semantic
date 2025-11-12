@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Social Impression Rating Task</title>
+    <script src="https://unpkg.com/jspsych@7.3.4"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.4"></script>
+    <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+        .rating-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .rating-scale {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 20px auto;
+            max-width: 700px;
+        }
+        
+        .rating-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 10px;
+        }
+        
+        .rating-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .rating-label {
+            font-size: 14px;
+            text-align: center;
+            max-width: 80px;
+        }
+        
+        .question-text {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .slider-container {
+            margin: 30px auto;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .slider {
+            width: 500px;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            outline: none;
+            border-radius: 5px;
+            margin: 0 20px;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        
+        .slider-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+            min-width: 30px;
+        }
+        
+        .warning-message {
+            color: red;
+            font-size: 18px;
+            font-weight: bold;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        
+        .stimulus-image {
+            max-width: 180px;
+            max-height: 220px;
+            object-fit: contain;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .bio-text {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .dual-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .attention-check {
+            font-size: 20px;
+            margin: 40px auto;
+            max-width: 600px;
+            text-align: center;
+            padding: 30px;
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+        }
+        
+        .fixation {
+            font-size: 60px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .stimulus-with-rating {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .rating-option.selected {
+            background-color: #4CAF50;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        .rating-option.selected .rating-number {
+            color: white;
+        }
+        
+        .submit-prompt {
+            margin-top: 20px;
+            font-size: 16px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body></body>
+<script>
+
+    // Initialize jsPsych
+    const jsPsych = initJsPsych({
+        on_finish: function() {
+            // Get only the relevant data (exclude instructions, breaks, etc.)
+            const relevant_data = jsPsych.data.get().filter({task: 'rating'});
+            
+            // Display data on screen
+            jsPsych.data.displayData('csv');
+            
+            // Download CSV file automatically
+            const csv = jsPsych.data.get().csv();
+            const filename = 'congress_semantic_data_' + Date.now() + '.csv';
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+    });
+
+    // Timeline
+    let timeline = [];
+
+    // Define the three questions for the three blocks
+    const questions = [
+        {
+            text: "How good do you think this person would be as a member of congress?",
+            scale_labels: ["Not at all", "Very much"]
+        },
+        {
+            text: "In general, how much would you like to vote for this person?",
+            scale_labels: ["Not at all", "Very much"]
+        },
+        {
+            text: "How likely do you think this person would win the election",
+            scale_labels: ["Not at all", "Very much"]
+        }
+    ];
+
+    // Load CSV data and parse it
+    // For the test run, we'll use the first 9 stimuli
+    const stimuli = [
+        {image: "image/Adam_Frisch.jpeg", bio: "bio/Adam_Frisch.txt", type: "photo", name: "Adam_Frisch"},
+        {image: "image/Adam_Gray.jpeg", bio: "bio/Adam_Gray.txt", type: "photo", name: "Adam_Gray"},
+        {image: "image/Adam_Withrow.jpeg", bio: "bio/Adam_Withrow.txt", type: "photo", name: "Adam_Withrow"},
+        {image: "image/Alexander_Avery.jpeg", bio: "bio/Alexander_Avery.txt", type: "bio", name: "Alexander_Avery"},
+        {image: "image/Alison_Esposito.png", bio: "bio/Alison_Esposito.txt", type: "bio", name: "Alison_Esposito"},
+        {image: "image/Amish_Shah.jpeg", bio: "bio/Amish_Shah.txt", type: "bio", name: "Amish_Shah"},
+        {image: "image/Andrea_Kirby.jpeg", bio: "bio/Andrea_Kirby.txt", type: "dual", name: "Andrea_Kirby"},
+        {image: "image/Andrea_Salinas.png", bio: "bio/Andrea_Salinas.txt", type: "dual", name: "Andrea_Salinas"},
+        {image: "image/Andrew_Aasen.png", bio: "bio/Andrew_Aasen.txt", type: "dual", name: "Andrew_Aasen"}
+    ];
+
+    // Preload all images and bio files
+    const images_to_preload = stimuli.map(s => s.image);
+    
+    // Object to store loaded bio texts
+    const loadedBios = {};
+    
+    // Preload bio texts
+    async function preloadBios() {
+        for (let stim of stimuli) {
+            if (stim.type === 'bio' || stim.type === 'dual') {
+                loadedBios[stim.name] = await loadBioText(stim.bio);
+            }
+        }
+    }
+    
+    const preload = {
+        type: jsPsychPreload,
+        images: images_to_preload
+    };
+    timeline.push(preload);
+
+    // Instructions
+    const instructions = {
+        type: jsPsychInstructions,
+        pages: [
+            '<h2>Welcome to the Social Impression Rating Task</h2>' +
+            '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
+            '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
+            '<p>Press the Next button to continue.</p>',
+            
+            '<h2>Task Structure</h2>' +
+            '<p>The task consists of 3 blocks, each with a different question.</p>' +
+            '<p>In each block, you will see multiple political candidates and rate them on the same question.</p>' +
+            '<p>There are three types of trials:</p>' +
+            '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
+            '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
+            '<li><b>Bio trials:</b> You will make judgments based solely on their biographies</li>' +
+            '<li><b>Dual trials:</b> You will make judgments based on both their photos and biographies</li>' +
+            '</ul>' +
+            '<p>Press the Next button to continue.</p>',
+            
+            '<h2>How to Respond</h2>' +
+            '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
+            '<p>For each person, you will answer <b>two questions</b> using sliders:</p>' +
+            '<p><b>1. Familiarity:</b> Except the information you just learned, how familiar are you with this person? (1 = I don\'t know this person at all, 7 = Very familiar)</p>' +
+            '<p><b>2. Main Question:</b> The specific question for the current block (e.g., good politician, ...)</p>' +
+            '<p></p>' +
+            '<p><b>Instructions:</b></p>' +
+            '<p>• Use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
+            '<p>• You can adjust both sliders before submitting</p>' +
+            '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
+            '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
+            '<p>There will also be occasional attention check questions - please read carefully!</p>' +
+            '<p>Press the Next button to begin.</p>'
+        ],
+        show_clickable_nav: true
+    };
+    timeline.push(instructions);
+
+    // Function to load bio text
+    async function loadBioText(bioPath) {
+        try {
+            const response = await fetch(bioPath);
+            const text = await response.text();
+            return text;
+        } catch (error) {
+            console.error('Error loading bio:', error);
+            return 'Bio text not available';
+        }
+    }
+
+    // Function to create a rating trial
+    function createRatingTrial(stimulus, question, block_num) {
+        const trial_type = stimulus.type;
+        const presentation_time = trial_type === 'photo' ? 2000 : 10000;
+        const response_time_limit = trial_type === 'photo' ? 20000 : 120000;
+        
+        let trial_sequence = [];
+        
+        // Add fixation cross before each trial
+        const fixation = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="fixation">+</div>',
+            choices: "NO_KEYS",
+            trial_duration: 500
+        };
+        trial_sequence.push(fixation);
+        
+        // Prepare stimulus content based on trial type
+        let stimulusContent = '';
+        if (trial_type === 'photo') {
+            stimulusContent = '<img src="' + stimulus.image + '" class="stimulus-image">';
+        } else if (trial_type === 'bio') {
+            const bioText = loadedBios[stimulus.name] || 'Bio text not available';
+            stimulusContent = '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>';
+        } else if (trial_type === 'dual') {
+            const bioText = loadedBios[stimulus.name] || 'Bio text not available';
+            stimulusContent = '<div class="dual-container">' +
+                '<img src="' + stimulus.image + '" class="stimulus-image">' +
+                '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>' +
+                '</div>';
+        }
+        
+        // Combined stimulus + rating trial (presentation only, no sliders yet)
+        const combined_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="stimulus-with-rating">' +
+                '<div id="warning-container"></div>' +
+                '<div class="stimulus-content">' +
+                stimulusContent +
+                '</div>' +
+                '</div>',
+            choices: "NO_KEYS",
+            trial_duration: presentation_time,
+            data: {
+                phase: 'stimulus_presentation',
+                stimulus_name: stimulus.name,
+                trial_type: stimulus.type,
+                block: block_num
+            }
+        };
+        trial_sequence.push(combined_trial);
+        
+        // Rating response phase with sliders
+        const rating_selection = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                // Only show familiarity question in first block (block_num === 1)
+                let familiarityHTML = '';
+                if (block_num === 1) {
+                    familiarityHTML = '<div class="question-text" style="margin-top: 30px;">Except the information you just learned, are you familiar with this person?</div>' +
+                        '<div class="slider-wrapper">' +
+                        '<input type="range" min="1" max="7" value="4" class="slider" id="familiarity-slider">' +
+                        '<span class="slider-value" id="familiarity-value">4</span>' +
+                        '</div>' +
+                        '<div class="slider-labels">' +
+                        '<span>I don\'t know this person at all</span>' +
+                        '<span>Very familiar</span>' +
+                        '</div>';
+                }
+                
+                return '<div class="stimulus-with-rating">' +
+                    '<div id="warning-container"></div>' +
+                    stimulusContent +
+                    '<div class="slider-container">' +
+                    familiarityHTML +
+                    '<div class="question-text" style="margin-top: 40px;">' + question.text + '</div>' +
+                    '<div class="slider-wrapper">' +
+                    '<input type="range" min="1" max="7" value="4" class="slider" id="main-slider">' +
+                    '<span class="slider-value" id="main-value">4</span>' +
+                    '</div>' +
+                    '<div class="slider-labels">' +
+                    '<span>' + question.scale_labels[0] + '</span>' +
+                    '<span>' + question.scale_labels[1] + '</span>' +
+                    '</div>' +
+                    '<div class="submit-prompt" id="submit-prompt" style="margin-top: 30px; font-size: 16px; font-style: italic;">Press SPACEBAR to submit your answers</div>' +
+                    '</div>' +
+                    '</div>';
+            },
+            choices: [' '],
+            data: {
+                task: 'rating',
+                stimulus_name: stimulus.name,
+                trial_type: stimulus.type,
+                block: block_num,
+                question: question.text
+            },
+            on_load: function() {
+                // Get slider elements
+                const familiaritySlider = document.getElementById('familiarity-slider');
+                const familiarityValue = document.getElementById('familiarity-value');
+                const mainSlider = document.getElementById('main-slider');
+                const mainValue = document.getElementById('main-value');
+                
+                // Update display when sliders change
+                if (familiaritySlider && familiarityValue) {
+                    familiaritySlider.oninput = function() {
+                        familiarityValue.textContent = this.value;
+                    };
+                }
+                
+                if (mainSlider && mainValue) {
+                    mainSlider.oninput = function() {
+                        mainValue.textContent = this.value;
+                    };
+                }
+                
+                // Show warning after response_time_limit
+                const warningTimeout = setTimeout(function() {
+                    const warningDiv = document.getElementById('warning-container');
+                    if (warningDiv && jsPsych.getCurrentTrial().type !== null) {
+                        warningDiv.innerHTML = '<div class="warning-message">Please respond faster!</div>';
+                    }
+                }, response_time_limit);
+                
+                // Store timeout for cleanup
+                this.warningTimeout = warningTimeout;
+            },
+            on_finish: function(data) {
+                // Get the final slider values
+                const familiaritySlider = document.getElementById('familiarity-slider');
+                const mainSlider = document.getElementById('main-slider');
+                
+                data.familiarity_rating = familiaritySlider ? familiaritySlider.value : null;
+                data.rating = mainSlider ? mainSlider.value : null;
+                data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
+                
+                // Clean up timeout
+                if (this.warningTimeout) {
+                    clearTimeout(this.warningTimeout);
+                }
+            }
+        };
+        trial_sequence.push(rating_selection);
+        
+        return {
+            timeline: trial_sequence
+        };
+    }
+
+    // Function to create attention check trial
+    function createAttentionCheck(correct_key, block_num) {
+        // Fixation before attention check
+        const fixation = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="fixation">+</div>',
+            choices: "NO_KEYS",
+            trial_duration: 500
+        };
+        
+        const attention_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="attention-check">' +
+                '<p><b>Attention Check:</b></p>' +
+                '<p>To ensure you are paying attention, please press the number <b>' + correct_key + '</b> on your keyboard.</p>' +
+                '</div>',
+            choices: ['1', '2', '3', '4', '5', '6', '7'],
+            data: {
+                task: 'attention_check',
+                correct_response: correct_key,
+                block: block_num
+            },
+            on_finish: function(data) {
+                data.correct = data.response === correct_key;
+            }
+        };
+        
+        const feedback = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                const last_trial = jsPsych.data.get().last(1).values()[0];
+                if (!last_trial.correct) {
+                    return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
+                        '<div class="warning-message">Wrong answer! Please pay attention to the task.</div>' +
+                        '</div>';
+                }
+                return '';
+            },
+            choices: "NO_KEYS",
+            trial_duration: function() {
+                const last_trial = jsPsych.data.get().last(1).values()[0];
+                return last_trial.correct ? 0 : 2000;
+            }
+        };
+        
+        return {
+            timeline: [fixation, attention_trial, feedback]
+        };
+    }
+
+    // Function to build the experimental blocks
+    function buildBlocks() {
+        // Create three blocks
+        for (let block = 0; block < 3; block++) {
+            // Block instructions
+            const block_instructions = {
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: '<h2>Block ' + (block + 1) + ' of 3</h2>' +
+                    '<p>For this block, you will answer the following question:</p>' +
+                    '<p style="font-size: 24px; font-weight: bold; margin: 30px;">' + questions[block].text + '</p>' +
+                    '<p>Press the spacebar to begin.</p>',
+                choices: [' ']
+            };
+            timeline.push(block_instructions);
+            
+            // Shuffle stimuli for this block
+            let block_stimuli = jsPsych.randomization.shuffle([...stimuli]);
+            
+            // Calculate number of attention checks (10% of trials, at least 1)
+            const num_attention_checks = Math.max(1, Math.round(block_stimuli.length * 0.1));
+            
+            // Create array of trial indices and randomly select positions for attention checks
+            let trial_indices = Array.from({length: block_stimuli.length}, (_, i) => i);
+            let attention_check_positions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
+            
+            // Add rating trials with randomly inserted attention checks
+            for (let i = 0; i < block_stimuli.length; i++) {
+                timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
+                
+                // Add attention check if this position was selected
+                if (attention_check_positions.includes(i)) {
+                    const random_key = String(Math.floor(Math.random() * 7) + 1);
+                    timeline.push(createAttentionCheck(random_key, block + 1));
+                }
+            }
+            
+            // Break between blocks (except after last block)
+            if (block < 2) {
+                const break_screen = {
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: '<h2>Break</h2>' +
+                        '<p>You have completed block ' + (block + 1) + ' of 3.</p>' +
+                        '<p>Take a short break if needed.</p>' +
+                        '<p>Press the spacebar when you are ready to continue.</p>',
+                    choices: [' ']
+                };
+                timeline.push(break_screen);
+            }
+        }
+
+        // Final screen
+        const final_screen = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<h2>Thank you!</h2>' +
+                '<p>You have completed the experiment.</p>' +
+                '<p>Your data has been saved and will download automatically.</p>' +
+                '<p>Press any key to finish.</p>',
+            choices: "ALL_KEYS"
+        };
+        timeline.push(final_screen);
+    }
+
+    // Preload bios, build blocks, then run the experiment
+    preloadBios().then(() => {
+        buildBlocks();
+        jsPsych.run(timeline);
+    });
+
+</script>
+</html>

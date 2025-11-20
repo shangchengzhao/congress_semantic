@@ -234,8 +234,7 @@
         {
             text: "How good do you think this person would be as a member of congress?",
             scale_labels: ["Not at all", "Very much"],
-            secondaryQuestion: null,  // Familiarity is always shown in block 1
-            tertiaryQuestion: null
+            secondaryQuestion: null  // Familiarity is always shown in block 1
         },
         {
             text: "In general, how much would you like to vote for this person?",
@@ -244,11 +243,6 @@
                 text: "How similar do you consider yourself to this person in ideology, political views, and background?",
                 scale_labels: ["Not at all", "Very much"],
                 showForTypes: ["bio", "dual"]  // Only show for bio and dual conditions
-            },
-            tertiaryQuestion: {
-                text: "How likely do you think this person would win the election?",
-                scale_labels: ["Not at all", "Very much"],
-                showForTypes: ["photo", "bio", "dual"]  // Show for all conditions
             }
         }
     ];
@@ -312,11 +306,10 @@
             '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
             '<p><b>Block 1:</b> You will answer a familiarity question (0 or 1) and rate each candidate.</p>' +
             '<p><b>Familiarity:</b> How familiar are you with this person before participating in this experiment? (0 = I don\'t know this person, 1 = I\'m familiar with this person)</p>' +
-            '<p><b>Note:</b> If you indicate you are familiar with a candidate (select 1), they will not appear in later blocks.</p>' +
             '<p></p>' +
             '<p><b>Instructions:</b></p>' +
             '<p>• Use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
-            '<p>• For familiarity, click on 0 or 1</p>' +
+            '<p>• For familiarity, click left or right most end (left = 0, right = 1); for other ratings, move the slider to the desired position</p>' +
             '<p>• You can adjust your ratings before submitting</p>' +
             '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
             '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
@@ -434,20 +427,6 @@
                         '</div>';
                 }
                 
-                // Check if we need to show tertiary question (election winning)
-                let tertiaryQuestionHTML = '';
-                if (question.tertiaryQuestion && question.tertiaryQuestion.showForTypes.includes(trial_type)) {
-                    tertiaryQuestionHTML = '<div class="question-text" style="margin-top: 40px;">' + question.tertiaryQuestion.text + '</div>' +
-                        '<div class="slider-wrapper">' +
-                        '<input type="range" min="1" max="7" value="4" class="slider" id="tertiary-slider">' +
-                        '<span class="slider-value" id="tertiary-value">4</span>' +
-                        '</div>' +
-                        '<div class="slider-labels">' +
-                        '<span>' + question.tertiaryQuestion.scale_labels[0] + '</span>' +
-                        '<span>' + question.tertiaryQuestion.scale_labels[1] + '</span>' +
-                        '</div>';
-                }
-                
                 return '<div class="stimulus-with-rating">' +
                     '<div id="warning-container"></div>' +
                     stimulusContent +
@@ -463,7 +442,6 @@
                     '<span>' + question.scale_labels[1] + '</span>' +
                     '</div>' +
                     secondaryQuestionHTML +
-                    tertiaryQuestionHTML +
                     '<div class="submit-prompt" id="submit-prompt" style="margin-top: 30px; font-size: 16px; font-style: italic;">Press SPACEBAR to submit your answers</div>' +
                     '</div>' +
                     '</div>';
@@ -484,8 +462,6 @@
                 const mainValue = document.getElementById('main-value');
                 const secondarySlider = document.getElementById('secondary-slider');
                 const secondaryValue = document.getElementById('secondary-value');
-                const tertiarySlider = document.getElementById('tertiary-slider');
-                const tertiaryValue = document.getElementById('tertiary-value');
                 
                 // Update display when sliders change
                 if (familiaritySlider && familiarityValue) {
@@ -506,12 +482,6 @@
                     };
                 }
                 
-                if (tertiarySlider && tertiaryValue) {
-                    tertiarySlider.oninput = function() {
-                        tertiaryValue.textContent = this.value;
-                    };
-                }
-                
                 // Show warning after response_time_limit
                 const warningTimeout = setTimeout(function() {
                     const warningDiv = document.getElementById('warning-container');
@@ -528,12 +498,10 @@
                 const familiaritySlider = document.getElementById('familiarity-slider');
                 const mainSlider = document.getElementById('main-slider');
                 const secondarySlider = document.getElementById('secondary-slider');
-                const tertiarySlider = document.getElementById('tertiary-slider');
                 
                 data.familiarity_rating = familiaritySlider ? familiaritySlider.value : null;
                 data.rating = mainSlider ? mainSlider.value : null;
                 data.secondary_rating = secondarySlider ? secondarySlider.value : null;
-                data.tertiary_rating = tertiarySlider ? tertiarySlider.value : null;
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
                 
                 // Track familiar candidates in block 1 to exclude from later blocks
@@ -609,12 +577,25 @@
         // Create two blocks
         for (let block = 0; block < 2; block++) {
             // Block instructions
+            let instructionText = '<h2>Block ' + (block + 1) + ' of 2</h2>';
+            
+            if (block === 0) {
+                // Block 1: mention both familiarity and main question
+                instructionText += '<p>For this block, you will answer the following questions:</p>' +
+                    '<p style="font-size: 18px; font-weight: bold; margin: 20px;">1. Familiarity: How familiar are you with this person before participating in this experiment?</p>' +
+                    '<p style="font-size: 18px; font-weight: bold; margin: 20px;">2. ' + questions[block].text + '</p>' +
+                    '<p>Press the spacebar to begin.</p>';
+            } else {
+                // Block 2: show main question and secondary question (similarity for bio/dual trials)
+                instructionText += '<p>For this block, you will answer the following questions:</p>' +
+                    '<p style="font-size: 18px; font-weight: bold; margin: 20px;">1. ' + questions[block].text + '</p>' +
+                    '<p style="font-size: 18px; font-weight: bold; margin: 20px;">2. ' + questions[block].secondaryQuestion.text + ' (for bio and dual trials only)</p>' +
+                    '<p>Press the spacebar to begin.</p>';
+            }
+            
             const block_instructions = {
                 type: jsPsychHtmlKeyboardResponse,
-                stimulus: '<h2>Block ' + (block + 1) + ' of 2</h2>' +
-                    '<p>For this block, you will answer the following question:</p>' +
-                    '<p style="font-size: 24px; font-weight: bold; margin: 30px;">' + questions[block].text + '</p>' +
-                    '<p>Press the spacebar to begin.</p>',
+                stimulus: instructionText,
                 choices: [' ']
             };
             timeline.push(block_instructions);

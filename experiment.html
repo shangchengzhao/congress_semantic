@@ -184,6 +184,14 @@
             font-style: italic;
             color: #666;
         }
+        
+        .candidate-name {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body></body>
@@ -217,20 +225,31 @@
 
     // Timeline
     let timeline = [];
+    
+    // Track familiar candidates to exclude from later blocks
+    let familiarCandidates = [];
 
-    // Define the three questions for the three blocks
+    // Define the questions for the two blocks
     const questions = [
         {
             text: "How good do you think this person would be as a member of congress?",
-            scale_labels: ["Not at all", "Very much"]
+            scale_labels: ["Not at all", "Very much"],
+            secondaryQuestion: null,  // Familiarity is always shown in block 1
+            tertiaryQuestion: null
         },
         {
             text: "In general, how much would you like to vote for this person?",
-            scale_labels: ["Not at all", "Very much"]
-        },
-        {
-            text: "How likely do you think this person would win the election",
-            scale_labels: ["Not at all", "Very much"]
+            scale_labels: ["Not at all", "Very much"],
+            secondaryQuestion: {
+                text: "How similar do you consider yourself to this person in ideology, political views, and background?",
+                scale_labels: ["Not at all", "Very much"],
+                showForTypes: ["bio", "dual"]  // Only show for bio and dual conditions
+            },
+            tertiaryQuestion: {
+                text: "How likely do you think this person would win the election?",
+                scale_labels: ["Not at all", "Very much"],
+                showForTypes: ["photo", "bio", "dual"]  // Show for all conditions
+            }
         }
     ];
 
@@ -279,8 +298,8 @@
             '<p>Press the Next button to continue.</p>',
             
             '<h2>Task Structure</h2>' +
-            '<p>The task consists of 3 blocks, each with a different question.</p>' +
-            '<p>In each block, you will see multiple political candidates and rate them on the same question.</p>' +
+            '<p>The task consists of 2 blocks, each with different questions.</p>' +
+            '<p>In each block, you will see multiple political candidates and rate them on multiple questions.</p>' +
             '<p>There are three types of trials:</p>' +
             '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
             '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
@@ -291,13 +310,14 @@
             
             '<h2>How to Respond</h2>' +
             '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
-            '<p>For each person, you will answer <b>two questions</b> using sliders:</p>' +
-            '<p><b>1. Familiarity:</b> Except the information you just learned, how familiar are you with this person? (1 = I don\'t know this person at all, 7 = Very familiar)</p>' +
-            '<p><b>2. Main Question:</b> The specific question for the current block (e.g., good politician, ...)</p>' +
+            '<p><b>Block 1:</b> You will answer a familiarity question (0 or 1) and rate each candidate.</p>' +
+            '<p><b>Familiarity:</b> How familiar are you with this person before participating in this experiment? (0 = I don\'t know this person, 1 = I\'m familiar with this person)</p>' +
+            '<p><b>Note:</b> If you indicate you are familiar with a candidate (select 1), they will not appear in later blocks.</p>' +
             '<p></p>' +
             '<p><b>Instructions:</b></p>' +
             '<p>• Use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
-            '<p>• You can adjust both sliders before submitting</p>' +
+            '<p>• For familiarity, click on 0 or 1</p>' +
+            '<p>• You can adjust your ratings before submitting</p>' +
             '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
             '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
             '<p>There will also be occasional attention check questions - please read carefully!</p>' +
@@ -307,6 +327,12 @@
     };
     timeline.push(instructions);
 
+    // Function to format candidate name from filename format to display format
+    function formatCandidateName(name) {
+        // Convert "Adam_Frisch" to "Adam Frisch"
+        return name.replace(/_/g, ' ');
+    }
+    
     // Function to load bio text
     async function loadBioText(bioPath) {
         try {
@@ -336,10 +362,14 @@
         };
         trial_sequence.push(fixation);
         
+        // Format candidate name for display
+        const candidateName = formatCandidateName(stimulus.name);
+        
         // Prepare stimulus content based on trial type
         let stimulusContent = '';
         if (trial_type === 'photo') {
-            stimulusContent = '<img src="' + stimulus.image + '" class="stimulus-image">';
+            stimulusContent = '<img src="' + stimulus.image + '" class="stimulus-image">' +
+                '<div class="candidate-name">(' + candidateName + ')</div>';
         } else if (trial_type === 'bio') {
             const bioText = loadedBios[stimulus.name] || 'Bio text not available';
             stimulusContent = '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>';
@@ -347,6 +377,7 @@
             const bioText = loadedBios[stimulus.name] || 'Bio text not available';
             stimulusContent = '<div class="dual-container">' +
                 '<img src="' + stimulus.image + '" class="stimulus-image">' +
+                '<div class="candidate-name">(' + candidateName + ')</div>' +
                 '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>' +
                 '</div>';
         }
@@ -378,14 +409,42 @@
                 // Only show familiarity question in first block (block_num === 1)
                 let familiarityHTML = '';
                 if (block_num === 1) {
-                    familiarityHTML = '<div class="question-text" style="margin-top: 30px;">Except the information you just learned, are you familiar with this person?</div>' +
+                    familiarityHTML = '<div class="question-text" style="margin-top: 30px;">How familiar are you with this person before participating in this experiment?</div>' +
                         '<div class="slider-wrapper">' +
-                        '<input type="range" min="1" max="7" value="4" class="slider" id="familiarity-slider">' +
-                        '<span class="slider-value" id="familiarity-value">4</span>' +
+                        '<input type="range" min="0" max="1" value="0" step="1" class="slider" id="familiarity-slider">' +
+                        '<span class="slider-value" id="familiarity-value">0</span>' +
                         '</div>' +
                         '<div class="slider-labels">' +
-                        '<span>I don\'t know this person at all</span>' +
-                        '<span>Very familiar</span>' +
+                        '<span>I don\'t know this person</span>' +
+                        '<span>I\'m familiar with this person</span>' +
+                        '</div>';
+                }
+                
+                // Check if we need to show secondary question (similarity)
+                let secondaryQuestionHTML = '';
+                if (question.secondaryQuestion && question.secondaryQuestion.showForTypes.includes(trial_type)) {
+                    secondaryQuestionHTML = '<div class="question-text" style="margin-top: 40px;">' + question.secondaryQuestion.text + '</div>' +
+                        '<div class="slider-wrapper">' +
+                        '<input type="range" min="1" max="7" value="4" class="slider" id="secondary-slider">' +
+                        '<span class="slider-value" id="secondary-value">4</span>' +
+                        '</div>' +
+                        '<div class="slider-labels">' +
+                        '<span>' + question.secondaryQuestion.scale_labels[0] + '</span>' +
+                        '<span>' + question.secondaryQuestion.scale_labels[1] + '</span>' +
+                        '</div>';
+                }
+                
+                // Check if we need to show tertiary question (election winning)
+                let tertiaryQuestionHTML = '';
+                if (question.tertiaryQuestion && question.tertiaryQuestion.showForTypes.includes(trial_type)) {
+                    tertiaryQuestionHTML = '<div class="question-text" style="margin-top: 40px;">' + question.tertiaryQuestion.text + '</div>' +
+                        '<div class="slider-wrapper">' +
+                        '<input type="range" min="1" max="7" value="4" class="slider" id="tertiary-slider">' +
+                        '<span class="slider-value" id="tertiary-value">4</span>' +
+                        '</div>' +
+                        '<div class="slider-labels">' +
+                        '<span>' + question.tertiaryQuestion.scale_labels[0] + '</span>' +
+                        '<span>' + question.tertiaryQuestion.scale_labels[1] + '</span>' +
                         '</div>';
                 }
                 
@@ -403,6 +462,8 @@
                     '<span>' + question.scale_labels[0] + '</span>' +
                     '<span>' + question.scale_labels[1] + '</span>' +
                     '</div>' +
+                    secondaryQuestionHTML +
+                    tertiaryQuestionHTML +
                     '<div class="submit-prompt" id="submit-prompt" style="margin-top: 30px; font-size: 16px; font-style: italic;">Press SPACEBAR to submit your answers</div>' +
                     '</div>' +
                     '</div>';
@@ -421,6 +482,10 @@
                 const familiarityValue = document.getElementById('familiarity-value');
                 const mainSlider = document.getElementById('main-slider');
                 const mainValue = document.getElementById('main-value');
+                const secondarySlider = document.getElementById('secondary-slider');
+                const secondaryValue = document.getElementById('secondary-value');
+                const tertiarySlider = document.getElementById('tertiary-slider');
+                const tertiaryValue = document.getElementById('tertiary-value');
                 
                 // Update display when sliders change
                 if (familiaritySlider && familiarityValue) {
@@ -432,6 +497,18 @@
                 if (mainSlider && mainValue) {
                     mainSlider.oninput = function() {
                         mainValue.textContent = this.value;
+                    };
+                }
+                
+                if (secondarySlider && secondaryValue) {
+                    secondarySlider.oninput = function() {
+                        secondaryValue.textContent = this.value;
+                    };
+                }
+                
+                if (tertiarySlider && tertiaryValue) {
+                    tertiarySlider.oninput = function() {
+                        tertiaryValue.textContent = this.value;
                     };
                 }
                 
@@ -450,10 +527,19 @@
                 // Get the final slider values
                 const familiaritySlider = document.getElementById('familiarity-slider');
                 const mainSlider = document.getElementById('main-slider');
+                const secondarySlider = document.getElementById('secondary-slider');
+                const tertiarySlider = document.getElementById('tertiary-slider');
                 
                 data.familiarity_rating = familiaritySlider ? familiaritySlider.value : null;
                 data.rating = mainSlider ? mainSlider.value : null;
+                data.secondary_rating = secondarySlider ? secondarySlider.value : null;
+                data.tertiary_rating = tertiarySlider ? tertiarySlider.value : null;
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
+                
+                // Track familiar candidates in block 1 to exclude from later blocks
+                if (block_num === 1 && data.familiarity_rating === '1') {
+                    familiarCandidates.push(stimulus.name);
+                }
                 
                 // Clean up timeout
                 if (this.warningTimeout) {
@@ -520,12 +606,12 @@
 
     // Function to build the experimental blocks
     function buildBlocks() {
-        // Create three blocks
-        for (let block = 0; block < 3; block++) {
+        // Create two blocks
+        for (let block = 0; block < 2; block++) {
             // Block instructions
             const block_instructions = {
                 type: jsPsychHtmlKeyboardResponse,
-                stimulus: '<h2>Block ' + (block + 1) + ' of 3</h2>' +
+                stimulus: '<h2>Block ' + (block + 1) + ' of 2</h2>' +
                     '<p>For this block, you will answer the following question:</p>' +
                     '<p style="font-size: 24px; font-weight: bold; margin: 30px;">' + questions[block].text + '</p>' +
                     '<p>Press the spacebar to begin.</p>',
@@ -534,7 +620,17 @@
             timeline.push(block_instructions);
             
             // Shuffle stimuli for this block
-            let block_stimuli = jsPsych.randomization.shuffle([...stimuli]);
+            // For blocks 2 and 3, exclude candidates marked as familiar in block 1
+            let block_stimuli;
+            if (block === 0) {
+                // Block 1: use all stimuli
+                block_stimuli = jsPsych.randomization.shuffle([...stimuli]);
+            } else {
+                // Blocks 2 and 3: filter out familiar candidates
+                block_stimuli = jsPsych.randomization.shuffle(
+                    stimuli.filter(s => !familiarCandidates.includes(s.name))
+                );
+            }
             
             // Calculate number of attention checks (10% of trials, at least 1)
             const num_attention_checks = Math.max(1, Math.round(block_stimuli.length * 0.1));
@@ -555,11 +651,11 @@
             }
             
             // Break between blocks (except after last block)
-            if (block < 2) {
+            if (block < 1) {
                 const break_screen = {
                     type: jsPsychHtmlKeyboardResponse,
                     stimulus: '<h2>Break</h2>' +
-                        '<p>You have completed block ' + (block + 1) + ' of 3.</p>' +
+                        '<p>You have completed block ' + (block + 1) + ' of 2.</p>' +
                         '<p>Take a short break if needed.</p>' +
                         '<p>Press the spacebar when you are ready to continue.</p>',
                     choices: [' ']

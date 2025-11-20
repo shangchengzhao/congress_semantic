@@ -48,6 +48,11 @@ def extract_candidate_name_from_path(path: str) -> str | None:
     return name
 
 
+def convert_name_to_display(name: str) -> str:
+    """Convert underscore name like Adam_Frisch to display name like Adam Frisch"""
+    return name.replace('_', ' ')
+
+
 def read_materials(path=MATERIALS):
     rows = []
     with open(path, newline="", encoding="utf-8") as f:
@@ -66,6 +71,31 @@ def write_materials(headers, rows, path=MATERIALS):
             writer.writerow(r)
 
 
+def remove_hyperlinked_text(para):
+    """Remove any text that contains hyperlinks from a paragraph"""
+    # Get runs and check for hyperlinks
+    cleaned_text = []
+    for run in para.runs:
+        # Check if this run has a hyperlink by looking at the run's element
+        has_hyperlink = False
+        for child in run.element:
+            if child.tag.endswith('hyperlink'):
+                has_hyperlink = True
+                break
+        # Also check if the run is inside a hyperlink element
+        parent = run.element.getparent()
+        while parent is not None:
+            if parent.tag.endswith('hyperlink'):
+                has_hyperlink = True
+                break
+            parent = parent.getparent()
+        
+        if not has_hyperlink:
+            cleaned_text.append(run.text)
+    
+    return ''.join(cleaned_text).strip()
+
+
 def parse_docx_by_candidate_names(docx_path, candidate_names):
     """
     Search for each candidate name in the document and extract their bio.
@@ -74,10 +104,10 @@ def parse_docx_by_candidate_names(docx_path, candidate_names):
     """
     doc = Document(docx_path)
     
-    # Get all text with paragraph indices
+    # Get all text with paragraph indices, removing hyperlinked text
     all_paragraphs = []
     for idx, para in enumerate(doc.paragraphs):
-        text = para.text.strip()
+        text = remove_hyperlinked_text(para)
         all_paragraphs.append((idx, text))
     
     mapping = {}
@@ -160,6 +190,39 @@ def parse_docx_by_candidate_names(docx_path, candidate_names):
     
     return mapping
 
+
+
+def clean_sentence_ending(line: str) -> str:
+    """Remove trailing commas and empty parentheses from a line"""
+    line = line.rstrip()
+    # Remove trailing comma
+    if line.endswith(','):
+        line = line[:-1].rstrip()
+    # Remove trailing empty parentheses
+    while line.endswith('()'):
+        line = line[:-2].rstrip()
+        # Also remove comma that might be before the empty parentheses
+        if line.endswith(','):
+            line = line[:-1].rstrip()
+    return line
+
+
+def add_bullet_points(text: str, section_titles: list) -> str:
+    """Add bullet points to each non-empty line that isn't a section title"""
+    lines = text.split('\n')
+    result = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            # Empty line - keep as is
+            result.append('')
+        elif stripped in section_titles:
+            # Section title - keep as is
+            result.append(stripped)
+        else:
+            # Content line - add bullet point
+            result.append('• ' + stripped)
+    return '\n'.join(result)
 
 
 def extract_sections_from_body(body_text: str) -> dict:
@@ -250,23 +313,41 @@ def main():
         orig_name, body = mapping[norm_candidate]
         sections = extract_sections_from_body(body)
         
+        # Clean sentence endings for all sections
+        section_titles = ['Educational Background', 'Career', 'Personal Information']
+        
         # Create file contents with clear headings
         parts = []
         eb = sections.get('Educational Background', '').strip()
         car = sections.get('Career', '').strip()
         pi = sections.get('Personal information', '').strip()
 
+        # Clean sentence endings in each section
         if eb:
+            eb_lines = [clean_sentence_ending(line) for line in eb.split('\n')]
+            eb = '\n'.join(eb_lines)
             parts.append('Educational Background\n' + eb)
         if car:
+            car_lines = [clean_sentence_ending(line) for line in car.split('\n')]
+            car = '\n'.join(car_lines)
             parts.append('Career\n' + car)
         if pi:
+            pi_lines = [clean_sentence_ending(line) for line in pi.split('\n')]
+            pi = '\n'.join(pi_lines)
             parts.append('Personal Information\n' + pi)
         if not parts:
             # fallback to full body
-            parts = [body.strip()]
+            body_lines = [clean_sentence_ending(line) for line in body.strip().split('\n')]
+            parts = ['\n'.join(body_lines)]
 
+        # Join sections and add bullet points
         out_text = '\n\n'.join(parts).strip()
+        out_text = add_bullet_points(out_text, section_titles)
+        
+        # Add candidate name at the top (convert underscores to spaces)
+        display_name = convert_name_to_display(candidate)
+        out_text = display_name + '\n\n' + out_text
+        
         out_path = os.path.join(BIO_DIR, f"{candidate}.txt")
         with open(out_path, 'w', encoding='utf-8') as f:
             f.write(out_text)

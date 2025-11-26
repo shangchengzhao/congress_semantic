@@ -240,7 +240,7 @@
 <script>
 
     // ===== TEST MODE =====
-    // Set to true to skip Block 1 and test Block 2 directly
+    // Set to true to skip Block 1 and go directly to Block 2
     const TEST_MODE = true;
     // =====================
 
@@ -273,29 +273,11 @@
                 return response.text();
             }).then(function(text) {
                 console.log('Google Sheets response:', text);
-                alert('Data successfully saved to Google Sheets!');
+                alert('Thank you for completing the experiment! Your data has been saved.');
             }).catch(function(error) {
                 console.error('Error sending data to Google Sheets:', error);
-                alert('Warning: Data may not have been saved to Google Sheets. Please check the downloaded CSV file.');
+                alert('Warning: There was an error saving your data. Please contact the researcher.');
             });
-            
-            // Display data on screen
-            jsPsych.data.displayData('csv');
-            
-            // Download CSV file automatically as backup
-            const csv = jsPsych.data.get().csv();
-            const filename = 'congress_semantic_data_' + Date.now() + '.csv';
-            
-            // Create download link
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
         }
     });
 
@@ -889,13 +871,17 @@
         if (block === 1) {
             timeline.push(block_instructions);
             
-            // Create a timeline variable that will be evaluated when Block 2 starts
-            const block2_trials = {
-                timeline: [],
-                conditional_function: function() {
-                    return true; // Always run, but builds trials on first execution
-                },
-                on_timeline_start: function() {
+            // Store Block 2 stimuli and config
+            let block2_stimuli = [];
+            let block2_memoryCheckNames = new Set();
+            let block2_attentionCheckPositions = [];
+            
+            // Build Block 2 configuration
+            const block2_setup = {
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: '',
+                trial_duration: 0,
+                on_start: function() {
                     // Filter out familiar candidates NOW (when Block 2 actually starts)
                     console.log('Block 2 starting: Filtering out', familiarCandidates.length, 'familiar candidates:', familiarCandidates);
                     const available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
@@ -914,14 +900,14 @@
                     ]);
                     
                     // Concatenate in the shuffled order
-                    const block_stimuli = [];
+                    block2_stimuli = [];
                     trialGroups.forEach(group => {
-                        block_stimuli.push(...group.trials);
+                        block2_stimuli.push(...group.trials);
                     });
                     console.log('Block 2 trial order:', trialGroups.map(g => g.name).join(' -> '));
                     
                     // Select bio and dual trials that have memory check questions
-                    const bioDualTrials = block_stimuli.filter(s => 
+                    const bioDualTrials = block2_stimuli.filter(s => 
                         (s.type === 'bio' || s.type === 'dual') && s.check_question && s.check_question.length > 0
                     );
                     
@@ -938,44 +924,58 @@
                     // Mark these trials as used for memory checks in this block
                     memoryCheckTrials.forEach(t => currentBlockMemorySet.add(t.name));
                     
-                    const memoryCheckNames = new Set(memoryCheckTrials.map(t => t.name));
+                    block2_memoryCheckNames = new Set(memoryCheckTrials.map(t => t.name));
                     
                     console.log('Block 2 - Total bio/dual trials:', bioDualTrials.length, 
                                 '- Available for memory check:', availableForMemoryCheck.length,
                                 '- Memory checks:', memoryCheckTrials.length,
-                                '- Selected:', Array.from(memoryCheckNames));
+                                '- Selected:', Array.from(block2_memoryCheckNames));
                     
                     // Calculate number of attention checks (10% of trials, at least 1)
-                    const num_attention_checks = Math.max(1, Math.round(block_stimuli.length * 0.1));
+                    const num_attention_checks = Math.max(1, Math.round(block2_stimuli.length * 0.1));
                     
                     // Create array of trial indices and randomly select positions for attention checks
-                    let trial_indices = Array.from({length: block_stimuli.length}, (_, i) => i);
-                    let attention_check_positions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
-                    
-                    // Build the timeline array for this block
-                    const block_timeline = [];
-                    for (let i = 0; i < block_stimuli.length; i++) {
-                        block_timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
-                        
-                        // Add memory check if this trial was selected for memory check
-                        if (memoryCheckNames.has(block_stimuli[i].name)) {
-                            block_timeline.push(createMemoryCheck(block_stimuli[i], block + 1));
-                        }
-                        
-                        // Add attention check if this position was selected
-                        if (attention_check_positions.includes(i)) {
-                            const random_key = String(Math.floor(Math.random() * 7) + 1);
-                            block_timeline.push(createAttentionCheck(random_key, block + 1));
-                        }
-                    }
-                    
-                    // Add all trials to the timeline
-                    block_timeline.forEach(trial => {
-                        timeline.push(trial);
-                    });
+                    let trial_indices = Array.from({length: block2_stimuli.length}, (_, i) => i);
+                    block2_attentionCheckPositions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
                 }
             };
-            timeline.push(block2_trials);
+            timeline.push(block2_setup);
+            
+            // Loop through Block 2 trials
+            const block2_loop = {
+                timeline: [
+                    {
+                        timeline: function() {
+                            const i = jsPsych.timelineVariable('trial_index');
+                            const stimulus = jsPsych.timelineVariable('stimulus');
+                            const trials = [];
+                            
+                            // Add rating trial
+                            trials.push(createRatingTrial(stimulus, questions[block], block + 1));
+                            
+                            // Add memory check if needed
+                            if (block2_memoryCheckNames.has(stimulus.name)) {
+                                trials.push(createMemoryCheck(stimulus, block + 1));
+                            }
+                            
+                            // Add attention check if this position was selected
+                            if (block2_attentionCheckPositions.includes(i)) {
+                                const random_key = String(Math.floor(Math.random() * 7) + 1);
+                                trials.push(createAttentionCheck(random_key, block + 1));
+                            }
+                            
+                            return trials;
+                        }
+                    }
+                ],
+                timeline_variables: function() {
+                    return block2_stimuli.map((stim, idx) => ({
+                        stimulus: stim,
+                        trial_index: idx
+                    }));
+                }
+            };
+            timeline.push(block2_loop);
             return;
         }
         

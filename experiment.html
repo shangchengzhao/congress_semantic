@@ -254,17 +254,24 @@
             // Send data to Google Sheets
             const googleSheetURL = 'https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec';
             
+            console.log('Sending data to Google Sheets...', allData.length, 'rows');
+            
+            // Use fetch with proper handling
             fetch(googleSheetURL, {
                 method: 'POST',
-                mode: 'no-cors',
+                body: JSON.stringify(allData),
                 headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(allData)
-            }).then(function() {
-                console.log('Data sent to Google Sheets successfully');
+                    'Content-Type': 'text/plain;charset=utf-8',
+                }
+            }).then(function(response) {
+                console.log('Google Sheets response status:', response.status);
+                return response.text();
+            }).then(function(text) {
+                console.log('Google Sheets response:', text);
+                alert('Data successfully saved to Google Sheets!');
             }).catch(function(error) {
                 console.error('Error sending data to Google Sheets:', error);
+                alert('Warning: Data may not have been saved to Google Sheets. Please check the downloaded CSV file.');
             });
             
             // Display data on screen
@@ -329,14 +336,14 @@
     let stimuli = [];
     let materialsLoaded = false;
     
-    // Function to parse CSV
+    // Function to parse CSV (handles quoted fields with commas)
     function parseCSV(text) {
         const lines = text.trim().split('\n');
-        const headers = lines[0].split(',');
+        const headers = parseCSVLine(lines[0]);
         const data = [];
         
         for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',');
+            const values = parseCSVLine(lines[i]);
             const row = {};
             for (let j = 0; j < headers.length; j++) {
                 row[headers[j]] = values[j] ? values[j].trim() : '';
@@ -344,6 +351,29 @@
             data.push(row);
         }
         return data;
+    }
+    
+    // Function to parse a single CSV line (handles quoted fields)
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current); // Add the last field
+        
+        return result;
     }
     
     // Function to load materials from CSV
@@ -375,6 +405,11 @@
                     check_question: row.check_question,
                     check_answer: row.check_answer
                 });
+                
+                // Log stimuli with memory check questions to verify parsing
+                if (row.check_question && row.check_question.length > 0) {
+                    console.log('Loaded memory check for', name, '- Question:', row.check_question, '- Correct answer:', row.check_answer);
+                }
             }
             
             console.log('Loaded', stimuli.length, 'stimuli');
@@ -409,9 +444,16 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 5. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>VERSION 6. Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
+            '<p></p>' +
+            '<p><b>Before you begin, please ensure:</b></p>' +
+            '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
+            '<li>You are in a <b>quiet space</b> where you can focus without distractions</li>' +
+            '<li>You are using a <b>computer</b> (not a mobile device or tablet)</li>' +
+            '<li>You are using a <b>compatible browser</b> (Chrome, Safari, Firefox, or Edge recommended)</li>' +
+            '</ul>' +
             '<p>Press the Next button to continue.</p>',
             
             '<h2>Task Structure</h2>' +
@@ -580,6 +622,12 @@
                 question: question.text
             },
             on_load: function() {
+                // Store current values on the trial object so they persist after DOM is cleared
+                const trialObj = this;
+                trialObj.currentFamiliarity = null;
+                trialObj.currentMainRating = '4';  // default slider value
+                trialObj.currentSecondaryRating = '4';  // default slider value
+                
                 // Get slider elements
                 const familiarityButtons = document.querySelectorAll('.familiarity-button');
                 const familiarityValue = document.getElementById('familiarity-value');
@@ -597,7 +645,10 @@
                             // Add selected class to clicked button
                             this.classList.add('selected');
                             // Update hidden input value
-                            familiarityValue.value = this.getAttribute('data-value');
+                            const value = this.getAttribute('data-value');
+                            familiarityValue.value = value;
+                            // Store in trial object
+                            trialObj.currentFamiliarity = value;
                         });
                     });
                 }
@@ -606,12 +657,16 @@
                 if (mainSlider && mainValue) {
                     mainSlider.oninput = function() {
                         mainValue.textContent = this.value;
+                        // Store in trial object
+                        trialObj.currentMainRating = this.value;
                     };
                 }
                 
                 if (secondarySlider && secondaryValue) {
                     secondarySlider.oninput = function() {
                         secondaryValue.textContent = this.value;
+                        // Store in trial object
+                        trialObj.currentSecondaryRating = this.value;
                     };
                 }
                 
@@ -627,14 +682,10 @@
                 this.warningTimeout = warningTimeout;
             },
             on_finish: function(data) {
-                // Get the final values
-                const familiarityValue = document.getElementById('familiarity-value');
-                const mainSlider = document.getElementById('main-slider');
-                const secondarySlider = document.getElementById('secondary-slider');
-                
-                data.familiarity_rating = familiarityValue ? familiarityValue.value : null;
-                data.rating = mainSlider ? mainSlider.value : null;
-                data.secondary_rating = secondarySlider ? secondarySlider.value : null;
+                // Get the values from the trial object where we stored them
+                data.familiarity_rating = this.currentFamiliarity;
+                data.rating = this.currentMainRating;
+                data.secondary_rating = this.currentSecondaryRating;
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
                 
                 // Track familiar candidates in block 1 to exclude from later blocks
@@ -737,19 +788,26 @@
                 block: block_num
             },
             on_load: function() {
+                // Store response on trial object
+                const trialObj = this;
+                trialObj.memoryResponse = null;
+                
                 const buttons = document.querySelectorAll('[data-response]');
                 const responseInput = document.getElementById('memory-response');
                 
                 buttons.forEach(button => {
                     button.addEventListener('click', function() {
-                        responseInput.value = this.getAttribute('data-response');
+                        const response = this.getAttribute('data-response');
+                        responseInput.value = response;
+                        // Store in trial object
+                        trialObj.memoryResponse = response;
                         jsPsych.finishTrial();
                     });
                 });
             },
             on_finish: function(data) {
-                const responseInput = document.getElementById('memory-response');
-                data.response = responseInput ? responseInput.value : null;
+                // Get response from trial object
+                data.response = this.memoryResponse;
                 // Convert to strings for comparison since CSV values are strings
                 data.correct = data.response === String(data.correct_answer);
                 data.timed_out = data.response === null || data.response === '';
@@ -811,21 +869,96 @@
             stimulus: instructionText,
             choices: [' ']
         };
+        
+        // For Block 2, wrap everything in a timeline that evaluates stimuli dynamically
+        if (block === 1) {
+            const block2_timeline = {
+                timeline: [block_instructions],
+                on_timeline_start: function() {
+                    // Filter out familiar candidates NOW (when Block 2 actually starts)
+                    console.log('Block 2 starting: Filtering out', familiarCandidates.length, 'familiar candidates:', familiarCandidates);
+                    const available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
+                    console.log('Block 2: After filtering, using', available_stimuli.length, 'stimuli');
+                    
+                    // Group by trial type
+                    const photoTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'photo'));
+                    const bioTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'bio'));
+                    const dualTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'dual'));
+                    
+                    // Shuffle the order of the three groups for this block
+                    const trialGroups = jsPsych.randomization.shuffle([
+                        {name: 'photo', trials: photoTrials},
+                        {name: 'bio', trials: bioTrials},
+                        {name: 'dual', trials: dualTrials}
+                    ]);
+                    
+                    // Concatenate in the shuffled order
+                    const block_stimuli = [];
+                    trialGroups.forEach(group => {
+                        block_stimuli.push(...group.trials);
+                    });
+                    console.log('Block 2 trial order:', trialGroups.map(g => g.name).join(' -> '));
+                    
+                    // Select bio and dual trials that have memory check questions
+                    const bioDualTrials = block_stimuli.filter(s => 
+                        (s.type === 'bio' || s.type === 'dual') && s.check_question && s.check_question.length > 0
+                    );
+                    
+                    // Get the memory check tracking set for this block
+                    const currentBlockMemorySet = memoryCheckUsed.block2;
+                    
+                    // Filter out trials already used for memory checks in this block
+                    const availableForMemoryCheck = bioDualTrials.filter(s => !currentBlockMemorySet.has(s.name));
+                    
+                    // Calculate 10% (rounded up) of available bio/dual trials for memory checks
+                    const numMemoryChecks = Math.ceil(availableForMemoryCheck.length * 0.1);
+                    const memoryCheckTrials = jsPsych.randomization.sampleWithoutReplacement(availableForMemoryCheck, Math.min(numMemoryChecks, availableForMemoryCheck.length));
+                    
+                    // Mark these trials as used for memory checks in this block
+                    memoryCheckTrials.forEach(t => currentBlockMemorySet.add(t.name));
+                    
+                    const memoryCheckNames = new Set(memoryCheckTrials.map(t => t.name));
+                    
+                    console.log('Block 2 - Total bio/dual trials:', bioDualTrials.length, 
+                                '- Available for memory check:', availableForMemoryCheck.length,
+                                '- Memory checks:', memoryCheckTrials.length,
+                                '- Selected:', Array.from(memoryCheckNames));
+                    
+                    // Calculate number of attention checks (10% of trials, at least 1)
+                    const num_attention_checks = Math.max(1, Math.round(block_stimuli.length * 0.1));
+                    
+                    // Create array of trial indices and randomly select positions for attention checks
+                    let trial_indices = Array.from({length: block_stimuli.length}, (_, i) => i);
+                    let attention_check_positions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
+                    
+                    // Add rating trials with randomly inserted attention checks
+                    for (let i = 0; i < block_stimuli.length; i++) {
+                        this.timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
+                        
+                        // Add memory check if this trial was selected for memory check
+                        if (memoryCheckNames.has(block_stimuli[i].name)) {
+                            this.timeline.push(createMemoryCheck(block_stimuli[i], block + 1));
+                        }
+                        
+                        // Add attention check if this position was selected
+                        if (attention_check_positions.includes(i)) {
+                            const random_key = String(Math.floor(Math.random() * 7) + 1);
+                            this.timeline.push(createAttentionCheck(random_key, block + 1));
+                        }
+                    }
+                }
+            };
+            timeline.push(block2_timeline);
+            return;
+        }
+        
+        // Block 1: build normally
         timeline.push(block_instructions);
         
         // Group stimuli by trial type
-        // For block 2, exclude candidates marked as familiar in block 1
-        let available_stimuli;
-        if (block === 0) {
-            // Block 1: use all stimuli
-            available_stimuli = [...stimuli];
-            console.log('Block 1: Using all', available_stimuli.length, 'stimuli');
-        } else {
-            // Block 2: filter out familiar candidates
-            console.log('Block 2: Filtering out', familiarCandidates.length, 'familiar candidates:', familiarCandidates);
-            available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
-            console.log('Block 2: After filtering, using', available_stimuli.length, 'stimuli');
-        }
+        // Block 1: use all stimuli
+        const available_stimuli = [...stimuli];
+        console.log('Block 1: Using all', available_stimuli.length, 'stimuli');
         
         // Group by trial type
         const photoTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'photo'));
@@ -900,7 +1033,7 @@
         // Build Block 1
         buildBlock(0);
         
-        // Add break screen with callback to build Block 2 after Block 1 completes
+        // Add break screen
         const break_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Break</h2>' +
@@ -910,25 +1043,23 @@
             choices: [' '],
             on_load: function() {
                 console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
-            },
-            on_finish: function() {
-                // Build Block 2 now, after Block 1 is complete and familiarCandidates is populated
-                console.log('Building Block 2 with updated familiar candidates list...');
-                buildBlock(1);
-                
-                // Add final screen
-                const final_screen = {
-                    type: jsPsychHtmlKeyboardResponse,
-                    stimulus: '<h2>Thank you!</h2>' +
-                        '<p>You have completed the experiment.</p>' +
-                        '<p>Your data has been saved and will download automatically.</p>' +
-                        '<p>Press any key to finish.</p>',
-                    choices: "ALL_KEYS"
-                };
-                timeline.push(final_screen);
             }
         };
         timeline.push(break_screen);
+        
+        // Build Block 2 (will filter out familiar candidates when it executes)
+        buildBlock(1);
+        
+        // Add final screen
+        const final_screen = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<h2>Thank you!</h2>' +
+                '<p>You have completed the experiment.</p>' +
+                '<p>Your data has been saved and will download automatically.</p>' +
+                '<p>Press any key to finish.</p>',
+            choices: "ALL_KEYS"
+        };
+        timeline.push(final_screen);
     }
 
     // Load materials, preload bios, build blocks, then run the experiment

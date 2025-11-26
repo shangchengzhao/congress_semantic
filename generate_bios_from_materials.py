@@ -193,11 +193,17 @@ def parse_docx_by_candidate_names(docx_path, candidate_names):
 
 
 def clean_sentence_ending(line: str) -> str:
-    """Remove trailing commas and empty parentheses from a line"""
+    """Remove trailing commas, empty parentheses, and (/) from a line"""
     line = line.rstrip()
     # Remove trailing comma
     if line.endswith(','):
         line = line[:-1].rstrip()
+    # Remove trailing (/)
+    if line.endswith('(/)'):
+        line = line[:-3].rstrip()
+        # Also remove comma that might be before (/)
+        if line.endswith(','):
+            line = line[:-1].rstrip()
     # Remove trailing empty parentheses
     while line.endswith('()'):
         line = line[:-2].rstrip()

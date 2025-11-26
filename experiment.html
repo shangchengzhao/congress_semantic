@@ -338,9 +338,16 @@
     
     // Function to parse CSV (handles quoted fields with commas)
     function parseCSV(text) {
-        const lines = text.trim().split('\n');
+        // Remove BOM if present
+        if (text.charCodeAt(0) === 0xFEFF) {
+            text = text.slice(1);
+        }
+        // Split by \r\n or \n to handle both Windows and Unix line endings
+        const lines = text.trim().split(/\r?\n/);
         const headers = parseCSVLine(lines[0]);
         const data = [];
+        
+        console.log('CSV Headers:', headers);
         
         for (let i = 1; i < lines.length; i++) {
             const values = parseCSVLine(lines[i]);
@@ -408,7 +415,7 @@
                 
                 // Log stimuli with memory check questions to verify parsing
                 if (row.check_question && row.check_question.length > 0) {
-                    console.log('Loaded memory check for', name, '- Question:', row.check_question, '- Correct answer:', row.check_answer);
+                    console.log('Loaded memory check for', name, '- Question:', row.check_question, '- Correct answer:', row.check_answer, '- Type:', typeof row.check_answer, '- All row keys:', Object.keys(row));
                 }
             }
             
@@ -444,7 +451,7 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 6. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>VERSION 8. Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
@@ -459,7 +466,7 @@
             '<h2>Task Structure</h2>' +
             '<p>The task consists of 2 blocks, each with different questions.</p>' +
             '<p>In each block, you will see multiple political candidates and rate them on multiple questions.</p>' +
-            '<p>There are three types of trials, presented in order:</p>' +
+            '<p>There are three types of trials:</p>' +
             '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
             '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
             '<li><b>Bio trials:</b> You will make judgments based solely on their biographies</li>' +
@@ -526,7 +533,7 @@
         let stimulusContent = '';
         if (trial_type === 'photo') {
             stimulusContent = '<img src="' + stimulus.image + '" class="stimulus-image">' +
-                '<div class="candidate-name">(' + candidateName + ')</div>';
+                '<div class="candidate-name">' + candidateName + '</div>';
         } else if (trial_type === 'bio') {
             const bioText = loadedBios[stimulus.name] || 'Bio text not available';
             stimulusContent = '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>';
@@ -534,7 +541,7 @@
             const bioText = loadedBios[stimulus.name] || 'Bio text not available';
             stimulusContent = '<div class="dual-container">' +
                 '<img src="' + stimulus.image + '" class="stimulus-image">' +
-                '<div class="candidate-name">(' + candidateName + ')</div>' +
+                '<div class="candidate-name">' + candidateName + '</div>' +
                 '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>' +
                 '</div>';
         }

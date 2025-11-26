@@ -240,7 +240,7 @@
 <script>
 
     // ===== TEST MODE =====
-    // Set to true to skip Block 1 and go directly to Block 2
+    // Set to true to enable faster testing (0ms stimulus presentation)
     const TEST_MODE = true;
     // =====================
 
@@ -438,7 +438,7 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 10. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>VERSION 11. Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
@@ -499,7 +499,7 @@
     // Function to create a rating trial
     function createRatingTrial(stimulus, question, block_num) {
         const trial_type = stimulus.type;
-        const presentation_time = trial_type === 'photo' ? 2000 : 10000;
+        const presentation_time = TEST_MODE ? 0 : (trial_type === 'photo' ? 2000 : 10000);
         const response_time_limit = trial_type === 'photo' ? 20000 : 120000;
         
         let trial_sequence = [];
@@ -1057,34 +1057,33 @@
 
     // Function to build the experimental blocks
     function buildBlocks() {
-        if (!TEST_MODE) {
-            // Build Block 1
-            buildBlock(0);
-            
-            // Add break screen
-            const break_screen = {
-                type: jsPsychHtmlKeyboardResponse,
-                stimulus: '<h2>Break</h2>' +
-                    '<p>You have completed block 1 of 2.</p>' +
-                    '<p>Take a short break if needed.</p>' +
-                    '<p>Press the spacebar when you are ready to continue.</p>',
-                choices: [' '],
-                on_load: function() {
-                    console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
+        // Build Block 1
+        buildBlock(0);
+        
+        // Add break screen
+        const break_screen = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<h2>Break</h2>' +
+                '<p>You have completed block 1 of 2.</p>' +
+                '<p>Take a short break if needed.</p>' +
+                '<p>Press the spacebar when you are ready to continue.</p>',
+            choices: [' '],
+            on_load: function() {
+                console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
+                
+                // TEST MODE: If no familiar candidates, simulate some for testing Block 2 filtering
+                if (TEST_MODE && familiarCandidates.length === 0) {
+                    console.log('TEST MODE: Simulating familiar candidates');
+                    const testFamiliar = jsPsych.randomization.sampleWithoutReplacement(
+                        stimuli.map(s => s.name), 
+                        Math.min(3, stimuli.length)
+                    );
+                    familiarCandidates.push(...testFamiliar);
+                    console.log('TEST MODE: Marked as familiar:', familiarCandidates);
                 }
-            };
-            timeline.push(break_screen);
-        } else {
-            // TEST MODE: Simulate some familiar candidates for testing Block 2 filtering
-            console.log('TEST MODE: Simulating familiar candidates');
-            // Pick a few random candidates to mark as familiar for testing
-            const testFamiliar = jsPsych.randomization.sampleWithoutReplacement(
-                stimuli.map(s => s.name), 
-                Math.min(3, stimuli.length)
-            );
-            familiarCandidates.push(...testFamiliar);
-            console.log('TEST MODE: Marked as familiar:', familiarCandidates);
-        }
+            }
+        };
+        timeline.push(break_screen);
         
         // Build Block 2 (will filter out familiar candidates when it executes)
         buildBlock(1);

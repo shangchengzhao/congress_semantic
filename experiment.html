@@ -336,7 +336,7 @@
             '<h2>Task Structure</h2>' +
             '<p>The task consists of 2 blocks, each with different questions.</p>' +
             '<p>In each block, you will see multiple political candidates and rate them on multiple questions.</p>' +
-            '<p>There are three types of trials:</p>' +
+            '<p>There are three types of trials, presented in order:</p>' +
             '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
             '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
             '<li><b>Bio trials:</b> You will make judgments based solely on their biographies</li>' +
@@ -348,10 +348,10 @@
             '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
             '<p>You will see \"Now you can respond\" in the top left corner when you can start answering.</p>' +
             '<p><b>Block 1:</b> You will answer a familiarity question (0 or 1) and rate each candidate.</p>' +
-            '<p><b>Familiarity:</b> Before this experiment, how familiar were you with this person? (0 = I do not know anything about this person, 1 = I know who this person is or have heard about them)</p>' +
+            '<p><b>Familiarity:</b> Before this experiment, how familiar were you with this person? (I do not know anything about this person vs. I know who this person is or have heard about them)</p>' +
             '<p></p>' +
             '<p><b>Instructions:</b></p>' +
-            '<p>• For familiarity, <b>click on the button</b> (0 or 1) that matches your answer. You can change your answer by clicking a different button.</p>' +
+            '<p>• For familiarity, <b>click on the button that matches your answer. You can change your answer by clicking a different button.</p>' +
             '<p>• For other ratings, use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
             '<p>• You can adjust your ratings before submitting</p>' +
             '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
@@ -447,8 +447,8 @@
                 if (block_num === 1) {
                     familiarityHTML = '<div class="question-text" style="margin-top: 30px;">Before participating, how familiar were you with this person?</div>' +
                         '<div class="familiarity-buttons">' +
-                        '<button class="familiarity-button" data-value="0">0<br>I do not know anything about this person</button>' +
-                        '<button class="familiarity-button" data-value="1">1<br>I know who this person is or have heard about them</button>' +
+                        '<button class="familiarity-button" data-value="0">I do not know anything about this person</button>' +
+                        '<button class="familiarity-button" data-value="1">I know who this person is or have heard about them</button>' +
                         '</div>' +
                         '<input type="hidden" id="familiarity-value" value="">';
                 }
@@ -654,18 +654,24 @@
             };
             timeline.push(block_instructions);
             
-            // Shuffle stimuli for this block
+            // Group stimuli by trial type
             // For blocks 2 and 3, exclude candidates marked as familiar in block 1
-            let block_stimuli;
+            let available_stimuli;
             if (block === 0) {
                 // Block 1: use all stimuli
-                block_stimuli = jsPsych.randomization.shuffle([...stimuli]);
+                available_stimuli = [...stimuli];
             } else {
                 // Blocks 2 and 3: filter out familiar candidates
-                block_stimuli = jsPsych.randomization.shuffle(
-                    stimuli.filter(s => !familiarCandidates.includes(s.name))
-                );
+                available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
             }
+            
+            // Group by trial type
+            const photoTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'photo'));
+            const bioTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'bio'));
+            const dualTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'dual'));
+            
+            // Concatenate in order: photo, bio, dual
+            const block_stimuli = [...photoTrials, ...bioTrials, ...dualTrials];
             
             // Calculate number of attention checks (10% of trials, at least 1)
             const num_attention_checks = Math.max(1, Math.round(block_stimuli.length * 0.1));

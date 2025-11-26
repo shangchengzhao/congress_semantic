@@ -242,16 +242,32 @@
     // Initialize jsPsych
     const jsPsych = initJsPsych({
         on_finish: function() {
-            // Get only the relevant data (exclude instructions, breaks, etc.)
-            const relevant_data = jsPsych.data.get().filter({task: 'rating'});
-            
             // Add assigned trial type to all data rows
             jsPsych.data.get().addToAll({assigned_trial_type: assignedTrialType});
+            
+            // Get all data as JSON for Google Sheets
+            const allData = jsPsych.data.get().values();
+            
+            // Send data to Google Sheets
+            const googleSheetURL = 'https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec';
+            
+            fetch(googleSheetURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(allData)
+            }).then(function() {
+                console.log('Data sent to Google Sheets successfully');
+            }).catch(function(error) {
+                console.error('Error sending data to Google Sheets:', error);
+            });
             
             // Display data on screen
             jsPsych.data.displayData('csv');
             
-            // Download CSV file automatically
+            // Download CSV file automatically as backup
             const csv = jsPsych.data.get().csv();
             const filename = 'congress_semantic_data_' + Date.now() + '.csv';
             
@@ -401,7 +417,7 @@
             '<p>You will see \"Now you can respond\" in the top left corner when you can start answering.</p>' +
             '<p></p>' +
             '<p><b>To enter your responses:</b></p>' +
-            '<p>• For familiarity, <b>click on the button that matches your answer. You can change your answer by clicking a different button.</p>' +
+            '<p>• For familiarity, click on the button that matches your answer. You can change your answer by clicking a different button.</p>' +
             '<p>• For other ratings, use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
             '<p>• You can adjust your ratings before submitting</p>' +
             '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
@@ -768,9 +784,10 @@
                     '<p>Press the spacebar to begin.</p>';
             } else {
                 // Block 2: show main question and secondary question (similarity for bio/dual trials)
-                instructionText += '<p>For this block, you will answer the following questions:</p>' +
+                instructionText += '<p>For this block, you will answer the following question(s):</p>' +
                     '<p style="font-size: 18px; font-weight: bold; margin: 20px;">1. ' + questions[block].text + '</p>' +
                     '<p style="font-size: 18px; font-weight: bold; margin: 20px;">2. ' + questions[block].secondaryQuestion.text + '</p>' +
+                    '<p>Note: You only need to answer one question in some trials, while in others you will answer both.</p>' +
                     '<p>Press the spacebar to begin.</p>';
             }
             

@@ -239,6 +239,11 @@
 <body></body>
 <script>
 
+    // ===== TEST MODE =====
+    // Set to true to skip Block 1 and test Block 2 directly
+    const TEST_MODE = true;
+    // =====================
+
     // Initialize jsPsych
     const jsPsych = initJsPsych({
         on_finish: function() {
@@ -451,7 +456,7 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 8. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>VERSION 9. Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
@@ -836,13 +841,16 @@
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
                         '<div class="warning-message">Wrong answer! Please pay attention to the biography content.</div>' +
                         '</div>';
+                } else {
+                    return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
+                        '<div style="color: green; font-size: 18px; font-weight: bold;">Your answer is correct. Great job paying attention!</div>' +
+                        '</div>';
                 }
-                return '';
             },
             choices: "NO_KEYS",
             trial_duration: function() {
                 const last_trial = jsPsych.data.get().last(1).values()[0];
-                return (last_trial.timed_out || !last_trial.correct) ? 2000 : 0;
+                return (last_trial.timed_out || !last_trial.correct) ? 2000 : 1500;
             }
         };
         
@@ -877,10 +885,16 @@
             choices: [' ']
         };
         
-        // For Block 2, wrap everything in a timeline that evaluates stimuli dynamically
+        // For Block 2, use a conditional timeline that builds dynamically
         if (block === 1) {
-            const block2_timeline = {
-                timeline: [block_instructions],
+            timeline.push(block_instructions);
+            
+            // Create a timeline variable that will be evaluated when Block 2 starts
+            const block2_trials = {
+                timeline: [],
+                conditional_function: function() {
+                    return true; // Always run, but builds trials on first execution
+                },
                 on_timeline_start: function() {
                     // Filter out familiar candidates NOW (when Block 2 actually starts)
                     console.log('Block 2 starting: Filtering out', familiarCandidates.length, 'familiar candidates:', familiarCandidates);
@@ -938,24 +952,30 @@
                     let trial_indices = Array.from({length: block_stimuli.length}, (_, i) => i);
                     let attention_check_positions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
                     
-                    // Add rating trials with randomly inserted attention checks
+                    // Build the timeline array for this block
+                    const block_timeline = [];
                     for (let i = 0; i < block_stimuli.length; i++) {
-                        this.timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
+                        block_timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
                         
                         // Add memory check if this trial was selected for memory check
                         if (memoryCheckNames.has(block_stimuli[i].name)) {
-                            this.timeline.push(createMemoryCheck(block_stimuli[i], block + 1));
+                            block_timeline.push(createMemoryCheck(block_stimuli[i], block + 1));
                         }
                         
                         // Add attention check if this position was selected
                         if (attention_check_positions.includes(i)) {
                             const random_key = String(Math.floor(Math.random() * 7) + 1);
-                            this.timeline.push(createAttentionCheck(random_key, block + 1));
+                            block_timeline.push(createAttentionCheck(random_key, block + 1));
                         }
                     }
+                    
+                    // Add all trials to the timeline
+                    block_timeline.forEach(trial => {
+                        timeline.push(trial);
+                    });
                 }
             };
-            timeline.push(block2_timeline);
+            timeline.push(block2_trials);
             return;
         }
         
@@ -1037,22 +1057,34 @@
 
     // Function to build the experimental blocks
     function buildBlocks() {
-        // Build Block 1
-        buildBlock(0);
-        
-        // Add break screen
-        const break_screen = {
-            type: jsPsychHtmlKeyboardResponse,
-            stimulus: '<h2>Break</h2>' +
-                '<p>You have completed block 1 of 2.</p>' +
-                '<p>Take a short break if needed.</p>' +
-                '<p>Press the spacebar when you are ready to continue.</p>',
-            choices: [' '],
-            on_load: function() {
-                console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
-            }
-        };
-        timeline.push(break_screen);
+        if (!TEST_MODE) {
+            // Build Block 1
+            buildBlock(0);
+            
+            // Add break screen
+            const break_screen = {
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: '<h2>Break</h2>' +
+                    '<p>You have completed block 1 of 2.</p>' +
+                    '<p>Take a short break if needed.</p>' +
+                    '<p>Press the spacebar when you are ready to continue.</p>',
+                choices: [' '],
+                on_load: function() {
+                    console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
+                }
+            };
+            timeline.push(break_screen);
+        } else {
+            // TEST MODE: Simulate some familiar candidates for testing Block 2 filtering
+            console.log('TEST MODE: Simulating familiar candidates');
+            // Pick a few random candidates to mark as familiar for testing
+            const testFamiliar = jsPsych.randomization.sampleWithoutReplacement(
+                stimuli.map(s => s.name), 
+                Math.min(3, stimuli.length)
+            );
+            familiarCandidates.push(...testFamiliar);
+            console.log('TEST MODE: Marked as familiar:', familiarCandidates);
+        }
         
         // Build Block 2 (will filter out familiar candidates when it executes)
         buildBlock(1);

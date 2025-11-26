@@ -867,98 +867,20 @@
             choices: [' ']
         };
         
-        // For Block 2, build trials dynamically after filtering familiar candidates
-        if (block === 1) {
-            timeline.push(block_instructions);
-            
-            // Create a wrapper timeline that builds Block 2 trials when it starts
-            const block2_wrapper = {
-                timeline: [],
-                on_timeline_start: function() {
-                    // Filter out familiar candidates NOW (when Block 2 actually starts)
-                    console.log('Block 2 starting: Filtering out', familiarCandidates.length, 'familiar candidates:', familiarCandidates);
-                    const available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
-                    console.log('Block 2: After filtering, using', available_stimuli.length, 'stimuli');
-                    
-                    // Group by trial type
-                    const photoTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'photo'));
-                    const bioTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'bio'));
-                    const dualTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'dual'));
-                    
-                    // Shuffle the order of the three groups for this block
-                    const trialGroups = jsPsych.randomization.shuffle([
-                        {name: 'photo', trials: photoTrials},
-                        {name: 'bio', trials: bioTrials},
-                        {name: 'dual', trials: dualTrials}
-                    ]);
-                    
-                    // Concatenate in the shuffled order
-                    const block2_stimuli = [];
-                    trialGroups.forEach(group => {
-                        block2_stimuli.push(...group.trials);
-                    });
-                    console.log('Block 2 trial order:', trialGroups.map(g => g.name).join(' -> '));
-                    
-                    // Select bio and dual trials that have memory check questions
-                    const bioDualTrials = block2_stimuli.filter(s => 
-                        (s.type === 'bio' || s.type === 'dual') && s.check_question && s.check_question.length > 0
-                    );
-                    
-                    // Get the memory check tracking set for this block
-                    const currentBlockMemorySet = memoryCheckUsed.block2;
-                    
-                    // Filter out trials already used for memory checks in this block
-                    const availableForMemoryCheck = bioDualTrials.filter(s => !currentBlockMemorySet.has(s.name));
-                    
-                    // Calculate 10% (rounded up) of available bio/dual trials for memory checks
-                    const numMemoryChecks = Math.ceil(availableForMemoryCheck.length * 0.1);
-                    const memoryCheckTrials = jsPsych.randomization.sampleWithoutReplacement(availableForMemoryCheck, Math.min(numMemoryChecks, availableForMemoryCheck.length));
-                    
-                    // Mark these trials as used for memory checks in this block
-                    memoryCheckTrials.forEach(t => currentBlockMemorySet.add(t.name));
-                    
-                    const block2_memoryCheckNames = new Set(memoryCheckTrials.map(t => t.name));
-                    
-                    console.log('Block 2 - Total bio/dual trials:', bioDualTrials.length, 
-                                '- Available for memory check:', availableForMemoryCheck.length,
-                                '- Memory checks:', memoryCheckTrials.length,
-                                '- Selected:', Array.from(block2_memoryCheckNames));
-                    
-                    // Calculate number of attention checks (10% of trials, at least 1)
-                    const num_attention_checks = Math.max(1, Math.round(block2_stimuli.length * 0.1));
-                    
-                    // Create array of trial indices and randomly select positions for attention checks
-                    let trial_indices = Array.from({length: block2_stimuli.length}, (_, i) => i);
-                    const block2_attentionCheckPositions = jsPsych.randomization.sampleWithoutReplacement(trial_indices, num_attention_checks);
-                    
-                    // Build and add trials to this timeline's array
-                    for (let i = 0; i < block2_stimuli.length; i++) {
-                        this.timeline.push(createRatingTrial(block2_stimuli[i], questions[block], block + 1));
-                        
-                        // Add memory check if needed
-                        if (block2_memoryCheckNames.has(block2_stimuli[i].name)) {
-                            this.timeline.push(createMemoryCheck(block2_stimuli[i], block + 1));
-                        }
-                        
-                        // Add attention check if this position was selected
-                        if (block2_attentionCheckPositions.includes(i)) {
-                            const random_key = String(Math.floor(Math.random() * 7) + 1);
-                            this.timeline.push(createAttentionCheck(random_key, block + 1));
-                        }
-                    }
-                }
-            };
-            timeline.push(block2_wrapper);
-            return;
-        }
-        
-        // Block 1: build normally
         timeline.push(block_instructions);
         
-        // Group stimuli by trial type
-        // Block 1: use all stimuli
-        const available_stimuli = [...stimuli];
-        console.log('Block 1: Using all', available_stimuli.length, 'stimuli');
+        // Filter stimuli based on block
+        let available_stimuli;
+        if (block === 0) {
+            // Block 1: use all stimuli
+            available_stimuli = [...stimuli];
+            console.log('Block 1: Using all', available_stimuli.length, 'stimuli');
+        } else {
+            // Block 2: filter out familiar candidates
+            available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
+            console.log('Block 2: Filtering out', familiarCandidates.length, 'familiar candidates');
+            console.log('Block 2: Using', available_stimuli.length, 'stimuli');
+        }
         
         // Group by trial type
         const photoTrials = jsPsych.randomization.shuffle(available_stimuli.filter(s => s.type === 'photo'));

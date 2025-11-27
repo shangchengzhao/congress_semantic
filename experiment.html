@@ -251,7 +251,7 @@
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '16';
+    const EXPERIMENT_VERSION = '17';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -836,12 +836,12 @@
                         
                         // Check main slider
                         if (!trialObj.mainSliderMoved) {
-                            validationErrors.push('Please move the main rating slider. If your answer is neutral, please move the slider back to the center.');
+                            validationErrors.push('Please move the main rating slider. If your answer is neutral, please move the slider back to the center');
                         }
                         
                         // Check secondary slider (only if it exists)
                         if (secondarySlider && !trialObj.secondarySliderMoved) {
-                            validationErrors.push('Please move the similarity rating slider. If your answer is neutral, please move the slider back to the center.');
+                            validationErrors.push('Please move the similarity rating slider. If your answer is neutral, please move the slider back to the center');
                         }
                         
                         // If validation fails, show warning
@@ -859,9 +859,17 @@
                             return; // Don't proceed
                         }
                         
-                        // If validation passes, end trial
+                        // If validation passes, end trial with data
                         document.removeEventListener('keydown', spacebarHandler);
-                        jsPsych.finishTrial();
+                        
+                        // Create data object to pass to finishTrial
+                        const trialData = {
+                            familiarity_rating: trialObj.currentFamiliarity,
+                            main_rating: trialObj.currentMainRating,
+                            similarity_rating: secondarySlider ? trialObj.currentSecondaryRating : null
+                        };
+                        
+                        jsPsych.finishTrial(trialData);
                     }
                 };
                 document.addEventListener('keydown', spacebarHandler);
@@ -879,10 +887,17 @@
                 this.spacebarHandler = spacebarHandler;
             },
             on_finish: function(data) {
-                // Get the values from the trial object where we stored them
-                data.familiarity_rating = this.currentFamiliarity;
-                data.main_rating = this.currentMainRating;
-                data.similarity_rating = this.currentSecondaryRating;
+                // Data is now passed from finishTrial, but also set from trial object as backup
+                if (!data.familiarity_rating) {
+                    data.familiarity_rating = this.currentFamiliarity;
+                }
+                if (!data.main_rating) {
+                    data.main_rating = this.currentMainRating;
+                }
+                if (!data.similarity_rating) {
+                    data.similarity_rating = this.currentSecondaryRating;
+                }
+                
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
                 data.reaction_time_ms = data.rt;
                 data.response_time_limit_ms = response_time_limit;
@@ -1071,7 +1086,7 @@
     }
 
     // Function to build a single block
-    function buildBlock(block) {
+    function buildBlock(block, pushToTimeline = true) {
         // Block instructions
         let instructionText = '<h2>Block ' + (block + 1) + ' of 2</h2>';
         
@@ -1096,7 +1111,9 @@
             choices: [' ']
         };
         
-        timeline.push(block_instructions);
+        // Create a local timeline for this block
+        const blockTimeline = [];
+        blockTimeline.push(block_instructions);
         
         // Filter stimuli based on block
         let available_stimuli;
@@ -1166,19 +1183,25 @@
         
         // Add rating trials with randomly inserted attention checks
         for (let i = 0; i < block_stimuli.length; i++) {
-            timeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
+            blockTimeline.push(createRatingTrial(block_stimuli[i], questions[block], block + 1));
             
             // Add memory check if this trial was selected for memory check
             if (memoryCheckNames.has(block_stimuli[i].name)) {
-                timeline.push(createMemoryCheck(block_stimuli[i], block + 1));
+                blockTimeline.push(createMemoryCheck(block_stimuli[i], block + 1));
             }
             
             // Add attention check if this position was selected
             if (attention_check_positions.includes(i)) {
                 const random_key = String(Math.floor(Math.random() * 7) + 1);
-                timeline.push(createAttentionCheck(random_key, block + 1));
+                blockTimeline.push(createAttentionCheck(random_key, block + 1));
             }
         }
+        
+        // Either push to main timeline or return the block timeline
+        if (pushToTimeline) {
+            blockTimeline.forEach(t => timeline.push(t));
+        }
+        return blockTimeline;
     }
 
     // Function to build the experimental blocks
@@ -1207,25 +1230,22 @@
                     familiarCandidates.push(...testFamiliar);
                     console.log('TEST MODE: Marked as familiar:', familiarCandidates);
                 }
+                
+                // Build Block 2 now and add to timeline
+                console.log('Building Block 2 now with familiar candidates filtered out...');
+                const block2Timeline = buildBlock(1, false);
+                
+                // Insert Block 2 trials into the timeline right after this trial
+                const currentIndex = jsPsych.getCurrentTimelineNodeID();
+                console.log('Inserting', block2Timeline.length, 'Block 2 trials after current index');
+                
+                // Add each trial from Block 2
+                block2Timeline.forEach(trial => {
+                    jsPsych.addNodeToEndOfTimeline(trial);
+                });
             }
         };
         timeline.push(break_screen);
-        
-        // Add a conditional timeline that builds Block 2 dynamically
-        const block2_conditional = {
-            timeline: [{
-                type: jsPsychHtmlKeyboardResponse,
-                stimulus: '',
-                choices: "NO_KEYS",
-                trial_duration: 0,
-                on_start: function() {
-                    // Build Block 2 now with familiar candidates filtered
-                    console.log('Building Block 2 now with familiar candidates filtered out...');
-                    buildBlock(1);
-                }
-            }]
-        };
-        timeline.push(block2_conditional);
         
         // Add final screen
         const final_screen = {

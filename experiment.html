@@ -251,7 +251,7 @@
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '20';
+    const EXPERIMENT_VERSION = '21';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -1347,9 +1347,8 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Thank you!</h2>' +
                 '<p>You have completed the experiment.</p>' +
-                '<p>Your data has been saved and will download automatically.</p>' +
-                '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
-                '<p>Press any key to finish.</p>',
+                '<p>We are processing your data. Please wait for a moment before it is successfully saved.</p>' +
+                '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>',
             choices: "ALL_KEYS"
         };
         // NOTE: Do not push the final_screen yet. We'll append it after building Block 2

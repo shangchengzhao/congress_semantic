@@ -258,11 +258,12 @@
     // Initialize jsPsych
     const jsPsych = initJsPsych({
         on_finish: function() {
-            // Add assigned trial type, participant ID, and start time to all data rows
+            // Add assigned trial type, participant ID, start time, and SONA code to all data rows
             jsPsych.data.get().addToAll({
                 assigned_trial_type: assignedTrialType,
                 participant_id: participantID,
-                experiment_start_time: experimentStartTime
+                experiment_start_time: experimentStartTime,
+                sona_survey_code: sonaSurveyCode
             });
             
             // Get all data as JSON for Google Sheets
@@ -285,16 +286,49 @@
                 return response.text();
             }).then(function(text) {
                 console.log('Google Sheets response:', text);
-                alert('Thank you for completing the experiment! Your data has been saved.');
+                
+                // Redirect to SONA for credit if we have a valid survey code
+                if (sonaSurveyCode && sonaSurveyCode !== 'NO_SONA_CODE') {
+                    console.log('Redirecting to SONA for credit...');
+                    const sonaRedirectUrl = SONA_COMPLETION_URL + sonaSurveyCode;
+                    // Show brief message before redirect
+                    alert('Thank you for completing the experiment! You will now be redirected to SONA to receive credit.');
+                    window.location.href = sonaRedirectUrl;
+                } else {
+                    // No SONA code - regular completion
+                    alert('Thank you for completing the experiment! Your data has been saved.');
+                }
             }).catch(function(error) {
                 console.error('Error sending data to Google Sheets:', error);
-                alert('Warning: There was an error saving your data. Please contact the researcher.');
+                
+                // Even if data save failed, try to give SONA credit
+                if (sonaSurveyCode && sonaSurveyCode !== 'NO_SONA_CODE') {
+                    const proceed = confirm('Warning: There was an error saving your data. Do you want to continue to SONA for credit? (Click OK to continue, Cancel to stay on this page)');
+                    if (proceed) {
+                        const sonaRedirectUrl = SONA_COMPLETION_URL + sonaSurveyCode;
+                        window.location.href = sonaRedirectUrl;
+                    }
+                } else {
+                    alert('Warning: There was an error saving your data. Please contact the researcher.');
+                }
             });
         }
     });
 
     // Timeline
     let timeline = [];
+    
+    // ===== SONA INTEGRATION =====
+    // Extract SONA survey code from URL parameter (e.g., ?id=100179)
+    const urlParams = new URLSearchParams(window.location.search);
+    const sonaSurveyCode = urlParams.get('id') || 'NO_SONA_CODE';
+    console.log('SONA Survey Code:', sonaSurveyCode);
+    
+    // SONA completion URL - Configured for UCSB SONA system
+    // Format: https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=XXXX&credit_token=YYYY&survey_code=%SURVEY_CODE%
+    // The survey code will be appended automatically from the URL parameter
+    const SONA_COMPLETION_URL = 'https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=4667&credit_token=042f348276d14b4db26f57efe7356440&survey_code=';
+    // ============================
     
     // Generate unique participant ID
     const participantID = 'P' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -462,7 +496,7 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 14. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>VERSION 15. Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of candidate in the election for the U.S. House of Representatives.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
@@ -471,6 +505,7 @@
             '<li>You are in a <b>quiet space</b> where you can focus without distractions</li>' +
             '<li>You are using a <b>computer</b> (not a mobile device or tablet)</li>' +
             '<li>You are using a <b>compatible browser</b> (Chrome, Safari, Firefox, or Edge recommended)</li>' +
+            '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
             '</ul>' +
             '<p>Press the Next button to continue.</p>',
             
@@ -1099,6 +1134,7 @@
                     stimulus: '<h2>Thank you!</h2>' +
                         '<p>You have completed the experiment.</p>' +
                         '<p>Your data has been saved and will download automatically.</p>' +
+                        '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
                         '<p>Press any key to finish.</p>',
                     choices: "ALL_KEYS"
                 };

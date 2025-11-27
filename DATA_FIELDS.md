@@ -9,6 +9,7 @@ These fields appear in every row of the data:
 1. **participant_id** - Unique identifier for each participant (e.g., "P1764179556092_5bdom9byy")
 2. **experiment_start_time** - Human-readable timestamp when experiment started (e.g., "11/26/2025, 14:32:15")
 3. **assigned_trial_type** - Randomly assigned condition (1, 2, or 3) for trial type assignment
+4. **sona_survey_code** - SONA survey code from URL parameter (e.g., "100179"), or "NO_SONA_CODE" if not from SONA
 
 ## jsPsych Standard Fields
 

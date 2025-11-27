@@ -120,6 +120,17 @@
             z-index: 1000;
         }
         
+        .validation-warning {
+            color: red;
+            font-size: 18px;
+            font-weight: bold;
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        
         .stimulus-image {
             max-width: 180px;
             max-height: 220px;
@@ -247,10 +258,11 @@
     // Initialize jsPsych
     const jsPsych = initJsPsych({
         on_finish: function() {
-            // Add assigned trial type and participant ID to all data rows
+            // Add assigned trial type, participant ID, and start time to all data rows
             jsPsych.data.get().addToAll({
                 assigned_trial_type: assignedTrialType,
-                participant_id: participantID
+                participant_id: participantID,
+                experiment_start_time: experimentStartTime
             });
             
             // Get all data as JSON for Google Sheets
@@ -288,6 +300,18 @@
     const participantID = 'P' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     console.log('Participant ID:', participantID);
     
+    // Record experiment start time (human readable)
+    const experimentStartTime = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    console.log('Experiment start time:', experimentStartTime);
+    
     // Track familiar candidates to exclude from later blocks
     let familiarCandidates = [];
     
@@ -305,7 +329,7 @@
             secondaryQuestion: null  // Familiarity is always shown in block 1
         },
         {
-            text: "In general, how much would you like to vote for this person?",
+            text: "In general, how likely would you be to vote for this person as a U.S. House Representative?",
             scale_labels: ["Not at all", "Very much"],
             secondaryQuestion: {
                 text: "How similar do you consider yourself to this person in ideology, political views, and background?",
@@ -438,8 +462,8 @@
     const instructions = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 13. Welcome to the Social Impression Rating Task</h2>' +
-            '<p>In this experiment, you will see photos and/or biographies of political candidates.</p>' +
+            '<h2>VERSION 14. Welcome to the Social Impression Rating Task</h2>' +
+            '<p>In this experiment, you will see photos and/or biographies of candidate in the election for the U.S. House of Representatives.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
             '<p><b>Before you begin, please ensure:</b></p>' +
@@ -509,7 +533,11 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<div class="fixation">+</div>',
             choices: "NO_KEYS",
-            trial_duration: 500
+            trial_duration: 500,
+            data: {
+                task: 'fixation',
+                block: block_num
+            }
         };
         trial_sequence.push(fixation);
         
@@ -545,10 +573,11 @@
             choices: "NO_KEYS",
             trial_duration: presentation_time,
             data: {
-                phase: 'stimulus_presentation',
+                task: 'stimulus_presentation',
                 stimulus_name: stimulus.name,
-                trial_type: stimulus.type,
-                block: block_num
+                stimulus_trial_type: stimulus.type,
+                block: block_num,
+                question: question.text
             }
         };
         trial_sequence.push(combined_trial);
@@ -607,13 +636,14 @@
                     '</div>' +
                     '</div>';
             },
-            choices: [' '],
+            choices: "NO_KEYS",
             data: {
                 task: 'rating',
                 stimulus_name: stimulus.name,
-                trial_type: stimulus.type,
+                stimulus_trial_type: stimulus.type,
                 block: block_num,
-                question: question.text
+                question: question.text,
+                secondary_question: question.secondaryQuestion ? question.secondaryQuestion.text : null
             },
             on_load: function() {
                 // Store current values on the trial object so they persist after DOM is cleared
@@ -621,6 +651,11 @@
                 trialObj.currentFamiliarity = null;
                 trialObj.currentMainRating = '4';  // default slider value
                 trialObj.currentSecondaryRating = '4';  // default slider value
+                
+                // Track whether user actually interacted with controls
+                trialObj.familiarityClicked = false;
+                trialObj.mainSliderMoved = false;
+                trialObj.secondarySliderMoved = false;
                 
                 // Get slider elements
                 const familiarityButtons = document.querySelectorAll('.familiarity-button');
@@ -643,6 +678,7 @@
                             familiarityValue.value = value;
                             // Store in trial object
                             trialObj.currentFamiliarity = value;
+                            trialObj.familiarityClicked = true;
                         });
                     });
                 }
@@ -653,6 +689,7 @@
                         mainValue.textContent = this.value;
                         // Store in trial object
                         trialObj.currentMainRating = this.value;
+                        trialObj.mainSliderMoved = true;
                     };
                 }
                 
@@ -661,8 +698,54 @@
                         secondaryValue.textContent = this.value;
                         // Store in trial object
                         trialObj.currentSecondaryRating = this.value;
+                        trialObj.secondarySliderMoved = true;
                     };
                 }
+                
+                // Add spacebar handler with validation
+                const spacebarHandler = function(e) {
+                    if (e.key === ' ' || e.code === 'Space') {
+                        e.preventDefault();
+                        
+                        // Validate responses
+                        let validationErrors = [];
+                        
+                        // Check familiarity (only in block 1)
+                        if (block_num === 1 && !trialObj.familiarityClicked) {
+                            validationErrors.push('Please select your familiarity with this person');
+                        }
+                        
+                        // Check main slider
+                        if (!trialObj.mainSliderMoved) {
+                            validationErrors.push('Please move the main rating slider');
+                        }
+                        
+                        // Check secondary slider (only if it exists)
+                        if (secondarySlider && !trialObj.secondarySliderMoved) {
+                            validationErrors.push('Please move the similarity rating slider');
+                        }
+                        
+                        // If validation fails, show warning
+                        if (validationErrors.length > 0) {
+                            const warningDiv = document.getElementById('warning-container');
+                            if (warningDiv) {
+                                warningDiv.innerHTML = '<div class="validation-warning">' + validationErrors.join('. ') + '.</div>';
+                                // Clear validation warning after 3 seconds
+                                setTimeout(function() {
+                                    if (warningDiv) {
+                                        warningDiv.innerHTML = '';
+                                    }
+                                }, 3000);
+                            }
+                            return; // Don't proceed
+                        }
+                        
+                        // If validation passes, end trial
+                        document.removeEventListener('keydown', spacebarHandler);
+                        jsPsych.finishTrial();
+                    }
+                };
+                document.addEventListener('keydown', spacebarHandler);
                 
                 // Show warning after response_time_limit
                 const warningTimeout = setTimeout(function() {
@@ -672,15 +755,18 @@
                     }
                 }, response_time_limit);
                 
-                // Store timeout for cleanup
+                // Store timeout and handler for cleanup
                 this.warningTimeout = warningTimeout;
+                this.spacebarHandler = spacebarHandler;
             },
             on_finish: function(data) {
                 // Get the values from the trial object where we stored them
                 data.familiarity_rating = this.currentFamiliarity;
-                data.rating = this.currentMainRating;
-                data.secondary_rating = this.currentSecondaryRating;
+                data.main_rating = this.currentMainRating;
+                data.similarity_rating = this.currentSecondaryRating;
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
+                data.reaction_time_ms = data.rt;
+                data.response_time_limit_ms = response_time_limit;
                 
                 // Track familiar candidates in block 1 to exclude from later blocks
                 if (block_num === 1 && data.familiarity_rating === '1') {
@@ -688,9 +774,12 @@
                     console.log('Added familiar candidate:', stimulus.name, '- Total familiar:', familiarCandidates.length);
                 }
                 
-                // Clean up timeout
+                // Clean up timeout and event listener
                 if (this.warningTimeout) {
                     clearTimeout(this.warningTimeout);
+                }
+                if (this.spacebarHandler) {
+                    document.removeEventListener('keydown', this.spacebarHandler);
                 }
             }
         };
@@ -708,7 +797,11 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<div class="fixation">+</div>',
             choices: "NO_KEYS",
-            trial_duration: 500
+            trial_duration: 500,
+            data: {
+                task: 'fixation',
+                block: block_num
+            }
         };
         
         const attention_trial = {
@@ -721,10 +814,13 @@
             data: {
                 task: 'attention_check',
                 correct_response: correct_key,
-                block: block_num
+                block: block_num,
+                stimulus_name: null,
+                stimulus_trial_type: null
             },
             on_finish: function(data) {
                 data.correct = data.response === correct_key;
+                data.reaction_time_ms = data.rt;
             }
         };
         
@@ -743,6 +839,10 @@
             trial_duration: function() {
                 const last_trial = jsPsych.data.get().last(1).values()[0];
                 return last_trial.correct ? 0 : 2000;
+            },
+            data: {
+                task: 'attention_check_feedback',
+                block: block_num
             }
         };
         
@@ -758,7 +858,11 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<div class="fixation">+</div>',
             choices: "NO_KEYS",
-            trial_duration: 500
+            trial_duration: 500,
+            data: {
+                task: 'fixation',
+                block: block_num
+            }
         };
         
         const memory_trial = {
@@ -777,6 +881,7 @@
             data: {
                 task: 'memory_check',
                 stimulus_name: stimulus.name,
+                stimulus_trial_type: stimulus.type,
                 correct_answer: stimulus.check_answer,
                 check_question: stimulus.check_question,
                 block: block_num
@@ -805,6 +910,7 @@
                 // Convert to strings for comparison since CSV values are strings
                 data.correct = data.response === String(data.correct_answer);
                 data.timed_out = data.response === null || data.response === '';
+                data.reaction_time_ms = data.rt;
                 console.log('Memory check - Question:', stimulus.check_question, 
                            '| Response:', data.response, '| Correct answer:', data.correct_answer, 
                            '| Is correct:', data.correct);
@@ -817,15 +923,15 @@
                 const last_trial = jsPsych.data.get().last(1).values()[0];
                 if (last_trial.timed_out) {
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
-                        '<div class="warning-message">Too slow! Please respond faster to memory check questions.</div>' +
+                        '<div style="color: red; font-size: 18px; font-weight: bold; text-align: center;">Too slow! Please respond faster to memory check questions.</div>' +
                         '</div>';
                 } else if (!last_trial.correct) {
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
-                        '<div class="warning-message">Wrong answer! Please pay attention to the biography content.</div>' +
+                        '<div style="color: red; font-size: 18px; font-weight: bold; text-align: center;">Wrong answer! Please pay attention to the biography content.</div>' +
                         '</div>';
                 } else {
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
-                        '<div style="color: green; font-size: 18px; font-weight: bold;">Your answer is correct. Great job paying attention!</div>' +
+                        '<div style="color: green; font-size: 18px; font-weight: bold; text-align: center;">Your answer is correct. Great job paying attention!</div>' +
                         '</div>';
                 }
             },
@@ -833,6 +939,10 @@
             trial_duration: function() {
                 const last_trial = jsPsych.data.get().last(1).values()[0];
                 return (last_trial.timed_out || !last_trial.correct) ? 2000 : 1500;
+            },
+            data: {
+                task: 'memory_check_feedback',
+                block: block_num
             }
         };
         
@@ -877,9 +987,11 @@
             console.log('Block 1: Using all', available_stimuli.length, 'stimuli');
         } else {
             // Block 2: filter out familiar candidates
+            console.log('Block 2: Familiar candidates to filter:', familiarCandidates);
             available_stimuli = stimuli.filter(s => !familiarCandidates.includes(s.name));
             console.log('Block 2: Filtering out', familiarCandidates.length, 'familiar candidates');
             console.log('Block 2: Using', available_stimuli.length, 'stimuli');
+            console.log('Block 2: Available stimulus names:', available_stimuli.map(s => s.name));
         }
         
         // Group by trial type
@@ -955,7 +1067,7 @@
         // Build Block 1
         buildBlock(0);
         
-        // Add break screen
+        // Add break screen that builds Block 2 AFTER Block 1 completes
         const break_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Break</h2>' +
@@ -963,7 +1075,7 @@
                 '<p>Take a short break if needed.</p>' +
                 '<p>Press the spacebar when you are ready to continue.</p>',
             choices: [' '],
-            on_load: function() {
+            on_finish: function() {
                 console.log('Block 1 complete. Familiar candidates:', familiarCandidates.length, '-', familiarCandidates);
                 
                 // TEST MODE: If no familiar candidates, simulate some for testing Block 2 filtering
@@ -976,31 +1088,39 @@
                     familiarCandidates.push(...testFamiliar);
                     console.log('TEST MODE: Marked as familiar:', familiarCandidates);
                 }
+                
+                // NOW build Block 2 after we know which candidates are familiar
+                console.log('Building Block 2 now with familiar candidates filtered out...');
+                buildBlock(1);
+                
+                // Add final screen
+                const final_screen = {
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: '<h2>Thank you!</h2>' +
+                        '<p>You have completed the experiment.</p>' +
+                        '<p>Your data has been saved and will download automatically.</p>' +
+                        '<p>Press any key to finish.</p>',
+                    choices: "ALL_KEYS"
+                };
+                timeline.push(final_screen);
             }
         };
         timeline.push(break_screen);
-        
-        // Build Block 2 (will filter out familiar candidates when it executes)
-        buildBlock(1);
-        
-        // Add final screen
-        const final_screen = {
-            type: jsPsychHtmlKeyboardResponse,
-            stimulus: '<h2>Thank you!</h2>' +
-                '<p>You have completed the experiment.</p>' +
-                '<p>Your data has been saved and will download automatically.</p>' +
-                '<p>Press any key to finish.</p>',
-            choices: "ALL_KEYS"
-        };
-        timeline.push(final_screen);
     }
 
     // Load materials, preload bios, build blocks, then run the experiment
     loadMaterials().then(() => {
+        console.log('Materials loaded. Stimuli count:', stimuli.length);
         return preloadBios();
     }).then(() => {
+        console.log('Bios preloaded');
         buildBlocks();
+        console.log('Blocks built. Timeline length:', timeline.length);
+        console.log('Starting experiment...');
         jsPsych.run(timeline);
+    }).catch((error) => {
+        console.error('Error during experiment setup:', error);
+        alert('Error loading experiment: ' + error.message);
     });
 
 </script>

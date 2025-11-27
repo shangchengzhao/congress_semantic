@@ -250,6 +250,13 @@
 <body></body>
 <script>
 
+    // ===== EXPERIMENT VERSION =====
+    const EXPERIMENT_VERSION = '16';
+    console.log('====================================');
+    console.log('Experiment Version:', EXPERIMENT_VERSION);
+    console.log('====================================');
+    // ==============================
+
     // ===== TEST MODE =====
     // Set to true to enable faster testing (0ms stimulus presentation)
     const TEST_MODE = true;
@@ -258,12 +265,13 @@
     // Initialize jsPsych
     const jsPsych = initJsPsych({
         on_finish: function() {
-            // Add assigned trial type, participant ID, start time, and SONA code to all data rows
+            // Add assigned trial type, participant ID, start time, SONA code, and version to all data rows
             jsPsych.data.get().addToAll({
                 assigned_trial_type: assignedTrialType,
                 participant_id: participantID,
                 experiment_start_time: experimentStartTime,
-                sona_survey_code: sonaSurveyCode
+                sona_survey_code: sonaSurveyCode,
+                experiment_version: EXPERIMENT_VERSION
             });
             
             // Get all data as JSON for Google Sheets
@@ -492,11 +500,11 @@
     };
     timeline.push(preload);
 
-    // Instructions
-    const instructions = {
+    // Welcome screen
+    const welcome = {
         type: jsPsychInstructions,
         pages: [
-            '<h2>VERSION 15. Welcome to the Social Impression Rating Task</h2>' +
+            '<h2>Welcome to the Social Impression Rating Task</h2>' +
             '<p>In this experiment, you will see photos and/or biographies of candidate in the election for the U.S. House of Representatives.</p>' +
             '<p>Your task is to rate your impression of each person on different dimensions.</p>' +
             '<p></p>' +
@@ -507,33 +515,109 @@
             '<li>You are using a <b>compatible browser</b> (Chrome, Safari, Firefox, or Edge recommended)</li>' +
             '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
             '</ul>' +
-            '<p>Press the Next button to continue.</p>',
-            
-            '<h2>Task Structure</h2>' +
-            '<p>The task consists of 2 blocks, each with different questions.</p>' +
-            '<p>In each block, you will see multiple political candidates and rate them on multiple questions.</p>' +
-            '<p>There are three types of trials:</p>' +
-            '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
-            '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
-            '<li><b>Bio trials:</b> You will make judgments based solely on their biographies</li>' +
-            '<li><b>Dual trials:</b> You will make judgments based on both their photos and biographies</li>' +
-            '</ul>' +
-            '<p>Press the Next button to continue.</p>',
-            
-            '<h2>How to Respond</h2>' +
-            '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
-            '<p>You will see \"Now you can respond\" in the top left corner when you can start answering.</p>' +
-            '<p></p>' +
-            '<p><b>To enter your responses:</b></p>' +
-            '<p>• For familiarity, click on the button that matches your answer. You can change your answer by clicking a different button.</p>' +
-            '<p>• For other ratings, use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
-            '<p>• You can adjust your ratings before submitting</p>' +
-            '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
-            '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
-            '<p>There will be occasional <b>attention check questions</b> and <b>memory check questions</b> - please read carefully!</p>' +
-            '<p>Press the Next button to begin.</p>'
+            '<p>Press the Next button to continue.</p>'
         ],
         show_clickable_nav: true
+    };
+    timeline.push(welcome);
+    
+    // Eligibility check
+    const eligibility_check = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div style="max-width: 600px; margin: 100px auto; text-align: center;">' +
+            '<h2>Eligibility Question</h2>' +
+            '<p style="font-size: 18px; margin: 40px 0;">At present, do you have the legal right to vote in the U.S.?</p>' +
+            '<div style="display: flex; justify-content: center; gap: 40px; margin-top: 40px;">' +
+            '<button class="familiarity-button" style="padding: 20px 60px; font-size: 18px;" data-response="yes">Yes</button>' +
+            '<button class="familiarity-button" style="padding: 20px 60px; font-size: 18px;" data-response="no">No</button>' +
+            '</div>' +
+            '<input type="hidden" id="eligibility-response" value="">' +
+            '</div>',
+        choices: "NO_KEYS",
+        data: {
+            task: 'eligibility_check'
+        },
+        on_load: function() {
+            const trialObj = this;
+            trialObj.eligibilityResponse = null;
+            
+            const buttons = document.querySelectorAll('[data-response]');
+            const responseInput = document.getElementById('eligibility-response');
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const response = this.getAttribute('data-response');
+                    responseInput.value = response;
+                    trialObj.eligibilityResponse = response;
+                    jsPsych.finishTrial();
+                });
+            });
+        },
+        on_finish: function(data) {
+            data.eligible = this.eligibilityResponse;
+            data.voting_eligible = this.eligibilityResponse === 'yes';
+        }
+    };
+    timeline.push(eligibility_check);
+    
+    // End experiment if not eligible
+    const ineligible_end = {
+        timeline: [{
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div style="max-width: 600px; margin: 100px auto; text-align: center;">' +
+                '<h2>Thank You</h2>' +
+                '<p style="font-size: 18px; margin: 40px 0;">Thank you for your interest in this study.</p>' +
+                '<p style="font-size: 18px;">Unfortunately, this study is only open to individuals who have the legal right to vote in the U.S.</p>' +
+                '<p style="font-size: 16px; margin-top: 40px;">If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
+                '<p style="font-size: 16px; margin-top: 40px;">You may close this window.</p>' +
+                '</div>',
+            choices: "NO_KEYS",
+            data: {
+                task: 'ineligible_end'
+            }
+        }],
+        conditional_function: function() {
+            const last_trial = jsPsych.data.get().last(1).values()[0];
+            return !last_trial.voting_eligible;
+        }
+    };
+    timeline.push(ineligible_end);
+    
+    // Instructions (only shown if eligible)
+    const instructions = {
+        timeline: [{
+            type: jsPsychInstructions,
+            pages: [
+                '<h2>Task Structure</h2>' +
+                '<p>The task consists of 2 blocks, each with different questions.</p>' +
+                '<p>In each block, you will see multiple political candidates and rate them on multiple questions.</p>' +
+                '<p>There are three types of trials:</p>' +
+                '<ul style="text-align: left; max-width: 500px; margin: 20px auto;">' +
+                '<li><b>Photo trials:</b> You will make judgments based solely on their profile photos</li>' +
+                '<li><b>Bio trials:</b> You will make judgments based solely on their biographies</li>' +
+                '<li><b>Dual trials:</b> You will make judgments based on both their photos and biographies</li>' +
+                '</ul>' +
+                '<p>Press the Next button to continue.</p>',
+                
+                '<h2>How to Respond</h2>' +
+                '<p>After viewing the photo and/or biography for an amount of time, the rating scale will <b>appear</b> at the bottom of the screen.</p>' +
+                '<p>You will see \"Now you can respond\" in the top left corner when you can start answering.</p>' +
+                '<p></p>' +
+                '<p><b>To enter your responses:</b></p>' +
+                '<p>• For familiarity, click on the button that matches your answer. You can change your answer by clicking a different button.</p>' +
+                '<p>• For other ratings, use your mouse or trackpad to move the <b>sliders</b> to indicate your ratings</p>' +
+                '<p>• You can adjust your ratings before submitting</p>' +
+                '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
+                '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
+                '<p>There will be occasional <b>attention check questions</b> and <b>memory check questions</b> - please read carefully!</p>' +
+                '<p>Press the Next button to begin.</p>'
+            ],
+            show_clickable_nav: true
+        }],
+        conditional_function: function() {
+            const last_trial = jsPsych.data.get().last(2).values()[1];
+            return last_trial.voting_eligible;
+        }
     };
     timeline.push(instructions);
 
@@ -752,12 +836,12 @@
                         
                         // Check main slider
                         if (!trialObj.mainSliderMoved) {
-                            validationErrors.push('Please move the main rating slider');
+                            validationErrors.push('Please move the main rating slider. If your answer is neutral, please move the slider back to the center.');
                         }
                         
                         // Check secondary slider (only if it exists)
                         if (secondarySlider && !trialObj.secondarySliderMoved) {
-                            validationErrors.push('Please move the similarity rating slider');
+                            validationErrors.push('Please move the similarity rating slider. If your answer is neutral, please move the slider back to the center.');
                         }
                         
                         // If validation fails, show warning
@@ -1102,7 +1186,7 @@
         // Build Block 1
         buildBlock(0);
         
-        // Add break screen that builds Block 2 AFTER Block 1 completes
+        // Add break screen
         const break_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Break</h2>' +
@@ -1123,25 +1207,37 @@
                     familiarCandidates.push(...testFamiliar);
                     console.log('TEST MODE: Marked as familiar:', familiarCandidates);
                 }
-                
-                // NOW build Block 2 after we know which candidates are familiar
-                console.log('Building Block 2 now with familiar candidates filtered out...');
-                buildBlock(1);
-                
-                // Add final screen
-                const final_screen = {
-                    type: jsPsychHtmlKeyboardResponse,
-                    stimulus: '<h2>Thank you!</h2>' +
-                        '<p>You have completed the experiment.</p>' +
-                        '<p>Your data has been saved and will download automatically.</p>' +
-                        '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
-                        '<p>Press any key to finish.</p>',
-                    choices: "ALL_KEYS"
-                };
-                timeline.push(final_screen);
             }
         };
         timeline.push(break_screen);
+        
+        // Add a conditional timeline that builds Block 2 dynamically
+        const block2_conditional = {
+            timeline: [{
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: '',
+                choices: "NO_KEYS",
+                trial_duration: 0,
+                on_start: function() {
+                    // Build Block 2 now with familiar candidates filtered
+                    console.log('Building Block 2 now with familiar candidates filtered out...');
+                    buildBlock(1);
+                }
+            }]
+        };
+        timeline.push(block2_conditional);
+        
+        // Add final screen
+        const final_screen = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<h2>Thank you!</h2>' +
+                '<p>You have completed the experiment.</p>' +
+                '<p>Your data has been saved and will download automatically.</p>' +
+                '<p>If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
+                '<p>Press any key to finish.</p>',
+            choices: "ALL_KEYS"
+        };
+        timeline.push(final_screen);
     }
 
     // Load materials, preload bios, build blocks, then run the experiment

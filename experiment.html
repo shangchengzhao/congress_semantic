@@ -251,7 +251,7 @@
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '18';
+    const EXPERIMENT_VERSION = '19';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -306,16 +306,50 @@
                 } else {
                     console.warn('No data rows to send.');
                 }
-            } catch (e) {
+                } catch (e) {
                 console.error('Error while inspecting data before sending:', e);
+            }
+            // Show a per-row presence/value for main_rating
+            try {
+                const mainRatingPresence = allData.map((r, i) => ({index: i, hasKey: Object.prototype.hasOwnProperty.call(r, 'main_rating'), value: r.main_rating}));
+                console.log('main_rating presence/value per row (first 30 rows):', JSON.stringify(mainRatingPresence.slice(0, 30)));
+            } catch (e) {
+                console.warn('Could not compute main_rating presence list:', e);
             }
             
             // Send data to Google Sheets
             const googleSheetURL = 'https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec';
             
             console.log('Sending data to Google Sheets...', allData.length, 'rows');
+            // Additional diagnostics of the payload we are about to send
+            try {
+                const ratingRows = allData.filter(r => r.task === 'rating');
+                const withMainKey = ratingRows.filter(r => Object.prototype.hasOwnProperty.call(r, 'main_rating'));
+                const withMainValue = ratingRows.filter(r => r.main_rating !== null && r.main_rating !== undefined && r.main_rating !== '');
+                console.log('Rating rows (task=="rating"):', ratingRows.length);
+                console.log('Rating rows with main_rating key present (even if null):', withMainKey.length);
+                console.log('Rating rows with non-empty main_rating:', withMainValue.length);
+                if (withMainValue.length > 0) console.log('Example rating row with main_rating value:', JSON.stringify(withMainValue[0]));
+                // Print a small payload sample (first 5 rows) so we can see exactly which keys are present
+                const payloadSample = allData.slice(0, 5).map(r => {
+                    const copy = {};
+                    Object.keys(r).forEach(k => { copy[k] = r[k]; });
+                    return copy;
+                });
+                console.log('Payload sample (first 5 rows):', JSON.stringify(payloadSample));
+            } catch (e) {
+                console.error('Error during payload diagnostics:', e);
+            }
             
             // Use fetch with proper handling
+            try {
+                const jsonString = JSON.stringify(allData);
+                console.log('Outgoing JSON payload length:', jsonString.length);
+                // Also show the first 1000 chars so dev console shows content at a glance
+                console.log('Outgoing JSON payload start:', jsonString.slice(0, 1000));
+            } catch (e) {
+                console.warn('Could not stringify entire payload:', e);
+            }
             fetch(googleSheetURL, {
                 method: 'POST',
                 body: JSON.stringify(allData),

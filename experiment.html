@@ -251,7 +251,7 @@
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '17';
+    const EXPERIMENT_VERSION = '18';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -276,6 +276,39 @@
             
             // Get all data as JSON for Google Sheets
             const allData = jsPsych.data.get().values();
+            // Ensure all rows contain the primary expected keys (so Google Sheets headers include them even if first row lacks them)
+            const requiredFields = [
+                'assigned_trial_type', 'participant_id', 'experiment_start_time', 'sona_survey_code', 'experiment_version',
+                'task', 'block', 'stimulus_name', 'stimulus_trial_type', 'question', 'secondary_question',
+                'familiarity_rating', 'main_rating', 'similarity_rating', 'responded_on_time', 'reaction_time_ms', 'response_time_limit_ms',
+                'check_question', 'check_answer', 'correct', 'timed_out'
+            ];
+            for (let row of allData) {
+                for (let f of requiredFields) {
+                    if (!(f in row)) {
+                        row[f] = null;
+                    }
+                }
+            }
+            // Debug: Log data summary keys to verify fields present (e.g., main_rating)
+            try {
+                if (allData && allData.length) {
+                    console.log('Total rows to send:', allData.length);
+                    // Show the keys present in the last row and a sample of a rating row
+                    const allKeys = Object.keys(allData[allData.length - 1]);
+                    console.log('Keys in last data row:', allKeys);
+                    const sampleRatingRow = [...allData].reverse().find(r => 'main_rating' in r || 'familiarity_rating' in r || 'similarity_rating' in r);
+                    if (sampleRatingRow) {
+                        console.log('Sample rating row found:', sampleRatingRow);
+                    } else {
+                        console.warn('No rating rows with main_rating/familiarity_rating/similarity_rating were found in data');
+                    }
+                } else {
+                    console.warn('No data rows to send.');
+                }
+            } catch (e) {
+                console.error('Error while inspecting data before sending:', e);
+            }
             
             // Send data to Google Sheets
             const googleSheetURL = 'https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec';
@@ -821,6 +854,9 @@
                     };
                 }
                 
+                // Record when the participant was allowed to respond (for RT calculation)
+                trialObj.responseStartTime = performance.now();
+
                 // Add spacebar handler with validation
                 const spacebarHandler = function(e) {
                     if (e.key === ' ' || e.code === 'Space') {
@@ -862,13 +898,25 @@
                         // If validation passes, end trial with data
                         document.removeEventListener('keydown', spacebarHandler);
                         
-                        // Create data object to pass to finishTrial
+                        // Create data object to pass to finishTrial (include plugin metadata and computed RT)
                         const trialData = {
+                            task: 'rating',
+                            stimulus_name: stimulus.name,
+                            stimulus_trial_type: stimulus.type,
+                            block: block_num,
+                            question: question.text,
+                            secondary_question: question.secondaryQuestion ? question.secondaryQuestion.text : null,
                             familiarity_rating: trialObj.currentFamiliarity,
+                            familiarity_clicked: trialObj.familiarityClicked,
                             main_rating: trialObj.currentMainRating,
-                            similarity_rating: secondarySlider ? trialObj.currentSecondaryRating : null
+                            main_slider_moved: trialObj.mainSliderMoved,
+                            similarity_rating: secondarySlider ? trialObj.currentSecondaryRating : null,
+                            similarity_slider_moved: trialObj.secondarySliderMoved,
+                            // compute RT since finishTrial is called programmatically
+                            rt: Math.round(performance.now() - trialObj.responseStartTime)
                         };
                         
+                        console.log('Submitting rating trial data:', trialData);
                         jsPsych.finishTrial(trialData);
                     }
                 };
@@ -888,15 +936,26 @@
             },
             on_finish: function(data) {
                 // Data is now passed from finishTrial, but also set from trial object as backup
-                if (!data.familiarity_rating) {
+                // Use 'in' checks to allow '0' and other falsy values
+                if (!('familiarity_rating' in data) || data.familiarity_rating === null) {
                     data.familiarity_rating = this.currentFamiliarity;
                 }
-                if (!data.main_rating) {
+                if (!('main_rating' in data) || data.main_rating === null) {
                     data.main_rating = this.currentMainRating;
                 }
-                if (!data.similarity_rating) {
+                if (!('similarity_rating' in data) || data.similarity_rating === null) {
                     data.similarity_rating = this.currentSecondaryRating;
                 }
+
+                // Debug: log rating data for each rating trial (helps verify ratings are recorded)
+                console.log('Rating trial data:', {
+                    stimulus_name: data.stimulus_name,
+                    block: data.block,
+                    familiarity_rating: data.familiarity_rating,
+                    main_rating: data.main_rating,
+                    similarity_rating: data.similarity_rating,
+                    rt: data.rt
+                });
                 
                 data.responded_on_time = data.rt !== null && data.rt <= response_time_limit;
                 data.reaction_time_ms = data.rt;
@@ -1234,20 +1293,23 @@
                 // Build Block 2 now and add to timeline
                 console.log('Building Block 2 now with familiar candidates filtered out...');
                 const block2Timeline = buildBlock(1, false);
-                
+
                 // Insert Block 2 trials into the timeline right after this trial
-                const currentIndex = jsPsych.getCurrentTimelineNodeID();
                 console.log('Inserting', block2Timeline.length, 'Block 2 trials after current index');
-                
+
                 // Add each trial from Block 2
                 block2Timeline.forEach(trial => {
                     jsPsych.addNodeToEndOfTimeline(trial);
                 });
+
+                // After we add Block 2 trials, append the final screen so it appears last
+                console.log('Appending final screen after Block 2');
+                jsPsych.addNodeToEndOfTimeline(final_screen);
             }
         };
         timeline.push(break_screen);
         
-        // Add final screen
+        // Define final screen (will be added after Block 2 is inserted)
         const final_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Thank you!</h2>' +
@@ -1257,7 +1319,8 @@
                 '<p>Press any key to finish.</p>',
             choices: "ALL_KEYS"
         };
-        timeline.push(final_screen);
+        // NOTE: Do not push the final_screen yet. We'll append it after building Block 2
+        //       inside the break screen's on_finish so the final screen appears last.
     }
 
     // Load materials, preload bios, build blocks, then run the experiment

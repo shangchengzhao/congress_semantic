@@ -274,9 +274,9 @@
                 experiment_version: EXPERIMENT_VERSION
             });
             
-            // Get all data as JSON for Google Sheets
+            // Get all data as JSON for PHP backend
             const allData = jsPsych.data.get().values();
-            // Ensure all rows contain the primary expected keys (so Google Sheets headers include them even if first row lacks them)
+            // Ensure all rows contain the primary expected keys (so CSV headers include them even if first row lacks them)
             const requiredFields = [
                 'assigned_trial_type', 'participant_id', 'experiment_start_time', 'sona_survey_code', 'experiment_version',
                 'task', 'block', 'stimulus_name', 'stimulus_trial_type', 'question', 'secondary_question',
@@ -317,9 +317,9 @@
                 console.warn('Could not compute main_rating presence list:', e);
             }
             
-            // Send data to Google Sheets
-            const googleSheetURL = 'https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec';
-            console.log('Sending data to Google Sheets...', allData.length, 'rows');
+            // Send data to PHP backend
+            const saveDataURL = 'save_data.php';
+            console.log('Sending data to PHP backend...', allData.length, 'rows');
             // Additional diagnostics of the payload we are about to send
             try {
                 const ratingRows = allData.filter(r => r.task === 'rating');
@@ -349,17 +349,23 @@
             } catch (e) {
                 console.warn('Could not stringify entire payload:', e);
             }
-            fetch(googleSheetURL, {
+            fetch(saveDataURL, {
                 method: 'POST',
                 body: JSON.stringify(allData),
                 headers: {
-                    'Content-Type': 'text/plain;charset=utf-8',
+                    'Content-Type': 'application/json',
                 }
             }).then(function(response) {
-                console.log('Google Sheets response status:', response.status);
-                return response.text();
-            }).then(function(text) {
-                console.log('Google Sheets response:', text);
+                console.log('PHP backend response status:', response.status);
+                return response.json();
+            }).then(function(result) {
+                console.log('PHP backend response:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error from server');
+                }
+                
+                console.log('Data saved successfully:', result.filename, '(' + result.rows + ' rows)');
                 
                 // Redirect to SONA for credit if we have a valid survey code
                 if (sonaSurveyCode && sonaSurveyCode !== 'NO_SONA_CODE') {
@@ -373,7 +379,7 @@
                     alert('Thank you for completing the experiment! Your data has been saved.');
                 }
             }).catch(function(error) {
-                console.error('Error sending data to Google Sheets:', error);
+                console.error('Error sending data to PHP backend:', error);
                 
                 // Even if data save failed, try to give SONA credit
                 if (sonaSurveyCode && sonaSurveyCode !== 'NO_SONA_CODE') {

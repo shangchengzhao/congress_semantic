@@ -36,6 +36,11 @@ Alerts participants to focus attention on the center of the screen before stimul
 - **Bio trials**: 120 seconds (120000ms)
 - **Dual trials**: 120 seconds (120000ms)
 
+### Actual Response Pace (according to Pilot Data): 
+- bio: 20 sec (after 10sec viewing)
+- dual: 22sec (after 10sec viewing)
+- photo: 5 sec (after 2sec viewing)
+
 ### Warning System:
 - **Trigger**: Warning message appears if participant does not respond within the time limit
 - **Message**: "Please respond faster!"

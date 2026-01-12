@@ -5,3 +5,19 @@
 # ignore virtual environment folders
 venv/
 env/
+
+# ===== IMPORTANT: Participant data - NEVER commit to GitHub =====
+data/
+# except .htaccess
+!data/.htaccess
+*.csv
+# Except the materials CSV which is needed for the experiment
+!materials.csv
+
+# Error logs
+error.log
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]

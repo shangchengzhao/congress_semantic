@@ -258,8 +258,8 @@
     // ==============================
 
     // ===== TEST MODE =====
-    // Set to true to enable faster testing (0ms stimulus presentation)
-    const TEST_MODE = false;
+    // Set to true to enable faster testing (0ms stimulus presentation + 5 candidates only)
+    const TEST_MODE = true;
     // =====================
 
     // Initialize jsPsych
@@ -545,6 +545,13 @@
             }
             
             console.log('Loaded', stimuli.length, 'stimuli');
+            
+            // TEST MODE: Limit to 5 random candidates for faster testing
+            if (TEST_MODE && stimuli.length > 5) {
+                stimuli = jsPsych.randomization.sampleWithoutReplacement(stimuli, 5);
+                console.log('TEST_MODE: Limited to', stimuli.length, 'stimuli for testing');
+            }
+            
             materialsLoaded = true;
         } catch (error) {
             console.error('Error loading materials:', error);

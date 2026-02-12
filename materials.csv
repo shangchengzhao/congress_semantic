@@ -1,140 +1,119 @@
-﻿image_name,bio_name,exclude,trial_type1,trial_type2,trial_type3,check_question,check_answer
-image/Adam_Frisch.jpeg,bio/Adam_Frisch.txt,,,,,,
-image/Adam_Gray.jpeg,bio/Adam_Gray.txt,,,,,,
-image/Adam_Withrow.jpeg,bio/Adam_Withrow.txt,,,,,,
-image/Alexander_Avery.jpeg,bio/Alexander_Avery.txt,,,,,,
-image/Alison_Esposito.png,bio/Alison_Esposito.txt,,,,,,
-image/Amish_Shah.jpeg,bio/Amish_Shah.txt,,,,,,
-image/Andrea_Kirby.jpeg,bio/Andrea_Kirby.txt,,,,,,
-image/Andrea_Salinas.png,bio/Andrea_Salinas.txt,,,,,,
-image/Andrew_Aasen.png,bio/Andrew_Aasen.txt,,,,,,
-image/Andrew_Black.jpg,bio/Andrew_Black.txt,,,,,,
-image/Angie_Craig.jpeg,bio/Angie_Craig.txt,,,,,,
-image/Anthony_DEsposito.jpg,bio/Anthony_DEsposito.txt,,,,,,
-image/Athena_Eastwood.jpeg,bio/Athena_Eastwood.txt,,,,,,
-image/Austin_Theriault.jpeg,bio/Austin_Theriault.txt,,,,,,
-image/Brandon_Williams.jpg,bio/Brandon_Williams.txt,,,,,,
-image/Brett_Smith.png,bio/Brett_Smith.txt,,,,,,
-image/Carl_Marlinga.jpeg,bio/Carl_Marlinga.txt,,,,,,
-image/Chris_Baum.jpeg,bio/Chris_Baum.txt,,,,,,
-image/Chris_DeLuzio.png,bio/Chris_DeLuzio.txt,,,,,,
-image/Curtis_Hertel.jpeg,bio/Curtis_Hertel.txt,,,,,,
-image/Dakotah_Miskus.jpeg,bio/Dakotah_Miskus.txt,1,,,,,
-image/Dan_Newhouse.jpg,bio/Dan_Newhouse.txt,,photo,dual,bio,Dan Newhouse received  Agricultural Economics Bachelor degree from Washington State University,1
-image/Dave_Min.jpeg,bio/Dave_Min.txt,,photo,dual,bio,"Dave Min was previously an assistant philosophy professor at University of California, Irvine",0
-image/David_Goossen.jpeg,bio/David_Goossen.txt,1,,,,,
-image/David_Havlicek.jpeg,bio/David_Havlicek.txt,1,,,,,
-image/David_Schweikert.jpeg,bio/David_Schweikert.txt,,photo,dual,bio,David Schweikert grew up in Midwest in a single-mother household,0
-image/David_Valadao.jpeg,bio/David_Valadao.txt,,photo,dual,bio,"David Valadao went to University of California, Davis and graduate in 3 years with Bachlor degree of Agricultural Science",0
-image/Dennis_Hayes.jpeg,bio/Dennis_Hayes.txt,1,,,,,
-image/Derek_Merrin.jpg,bio/Derek_Merrin.txt,,photo,dual,bio,Derek Merrin elected as state representative of Ohio House of Representatives twice,1
-image/Derek_Tran.jpeg,bio/Derek_Tran.txt,,photo,dual,bio,Derek Tran got his Doctor degree from Glendale University College of Law,1
-image/Derrick_Anderson.jpg,bio/Derrick_Anderson.txt,,bio,photo,dual,Derrick Anderson's favorite superhero is Iron Man,0
-image/Derrick_Van_Orden.png,bio/Derrick_Van_Orden.txt,,bio,photo,dual,Derrick Van Orden joined the Wisconsin's Police Department and was promoted as conmissioner in 2014,0
-image/Diana_Merenda.jpeg,bio/Diana_Merenda.txt,,bio,photo,dual,Diana Merenda worked as an economics professor in Baruch College for seven years,0
-image/Dina_Titus.jpeg,bio/Dina_Titus.txt,,bio,photo,dual,Dina Titus served as California Senate's Minority Leader from 1993 to 2009,0
-image/Don_Bacon.jpeg,bio/Don_Bacon.txt,,bio,photo,dual,"Don Bacon chose Life Science as undergraduate major, although he always has a passion in Political Science",0
-image/Donald_Davis.jpg,bio/Donald_Davis.txt,,bio,photo,dual,Donald Davis worked in the tobacco fields as a young man. He and his wife live in North Carolina,1
-image/Drew_Johnson.jpeg,bio/Drew_Johnson.txt,,dual,bio,photo,Drew Johnson worked at the National Taxpayers Union,1
-image/Emilia_Sykes.png,bio/Emilia_Sykes.txt,,dual,bio,photo,Emilia Sykes supports removing sales tax on feminine hygiene products,1
-image/Eric_Hafner.png,bio/Eric_Hafner.txt,1,,,,,
-image/Eric_Sorenson.jpeg,bio/Eric_Sorenson.txt,,dual,bio,photo,Eric Sorenson ran for the U.S. House of Representatives in Illinois’s 17th Congressional District in 2022 and lost by a narrow margin,0
-image/Eugene_Vindman.jpg,bio/Eugene_Vindman.txt,,dual,bio,photo,Eugene Vindman was born and grew up in New York City,0
-image/Evan_Low.jpeg,bio/Evan_Low.txt,,dual,bio,photo,Evan Low is the youngest Mexican American congressman in the nation,0
-image/Frank_Mrvan.jpeg,bio/Frank_Mrvan.txt,,dual,bio,photo,Frank Mrvan supports anti-semitism and socialism within America,0
-image/Gabe_Evans.jpeg,bio/Gabe_Evans.txt,,,,,,
-image/Gabriel_Vasquez.jpg,bio/Gabriel_Vasquez.txt,,,,,,
-image/George_Logan.jpeg,bio/George_Logan.txt,,,,,,
-image/George_Whitesides.jpeg,bio/George_Whitesides.txt,,,,,,
-image/Greg_Kidd.jpeg,bio/Greg_Kidd.txt,,,,,,
-image/Henry_Cuellar.jpg,bio/Henry_Cuellar.txt,,,,,,
-image/Hillary_Scholten.jpeg,bio/Hillary_Scholten.txt,,,,,,
-image/Jahana_Hayes.jpeg,bio/Jahana_Hayes.txt,,,,,,
-image/James_Treibert.jpeg,bio/James_Treibert.txt,1,,,,,
-image/James_Wiley.jpeg,bio/James_Wiley.txt,,,,,,
-image/Janelle_Bynum.jpg,bio/Janelle_Bynum.txt,,,,,,
-image/Janelle_Stelson.png,bio/Janelle_Stelson.txt,,,,,,
-image/Jared_Golden.jpeg,bio/Jared_Golden.txt,,,,,,
-image/Javi_Tachiquin.jpeg,bio/Javi_Tachiquin.txt,,,,,,
-image/Jay_Furman.png,bio/Jay_Furman.txt,,,,,,
-image/Jeffrey_Hurd.jpeg,bio/Jeffrey_Hurd.txt,,,,,,
-image/Jennifer_Kiggans.png,bio/Jennifer_Kiggans.txt,,,,,,
-image/Jerrod_Sessler.jpg,bio/Jerrod_Sessler.txt,,,,,,
-image/Jim_Casha.jpeg,bio/Jim_Casha.txt,,,,,,
-image/Joe_Kent.jpg,bio/Joe_Kent.txt,,,,,,
-image/Joe_Teirab.jpeg,bio/Joe_Teirab.txt,,,,,,
-image/John_Avlon.jpg,bio/John_Avlon.txt,,,,,,
-image/John_Duarte.jpeg,bio/John_Duarte.txt,,,,,,
-image/John_Howe.png,bio/John_Howe.txt,,,,,,
-image/John_James.jpeg,bio/John_James.txt,,,,,,
-image/John_Mannion.png,bio/John_Mannion.txt,,,,,,
-image/Joseph_McGraw.jpeg,bio/Joseph_McGraw.txt,,,,,,
-image/Josh_Riley.jpg,bio/Josh_Riley.txt,,,,,,
-image/Juan_Ciscomani.jpeg,bio/Juan_Ciscomani.txt,,,,,,
-image/Kathy_Goodwin.jpeg,bio/Kathy_Goodwin.txt,,,,,,
-image/Ken_Calvert.jpeg,bio/Ken_Calvert.txt,,,,,,
-image/Kevin_Coughlin.jpg,bio/Kevin_Coughlin.txt,,,,,,
-image/Kirsten_Engel.jpeg,bio/Kirsten_Engel.txt,,,,,,
-image/Kristen_Rivet.jpeg,bio/Kristen_Rivet.txt,,,,,,
-image/Lana_Leguia.jpg,bio/Lana_Leguia.txt,,,,,,
-image/Lanan_Baccam.jpeg,bio/Lanan_Baccam.txt,,,,,,
-image/Laura_Gillen.jpg,bio/Laura_Gillen.txt,,,,,,
-image/Laurie_Buckhout.png,bio/Laurie_Buckhout.txt,,,,,,
-image/Lori_Chavez-DeRemer.jpg,bio/Lori_Chavez-DeRemer.txt,,,,,,
-image/Louis_Palus.jpeg,bio/Louis_Palus.txt,,,,,,
-image/Luis_Pozzolo.jpeg,bio/Luis_Pozzolo.txt,,,,,,
-image/Lynn_Chapman.jpeg,bio/Lynn_Chapman.txt,,,,,,
-image/Marco_Battaglia.jpeg,bio/Marco_Battaglia.txt,,,,,,
-image/Marcus_Molinaro.jpg,bio/Marcus_Molinaro.txt,,,,,,
-image/Marcy_Kaptur.jpg,bio/Marcy_Kaptur.txt,,,,,,
-image/Marie_Gluesenkamp_Perez.png,bio/Marie_Gluesenkamp_Perez.txt,,,,,,
-image/Mark_Armodei.jpeg,bio/Mark_Armodei.txt,,,,,,
-image/Mark_Robertson.jpeg,bio/Mark_Robertson.txt,,,,,,
-image/Mary_Peltola.png,bio/Mary_Peltola.txt,,,,,,
-image/Matt_Cartwright.jpg,bio/Matt_Cartwright.txt,,,,,,
-image/Mayra_Flores.jpg,bio/Mayra_Flores.txt,,,,,,
-image/Michael_Lawler.jpg,bio/Michael_Lawler.txt,,,,,,
-image/Michael_LiPetri_Jr..jpg,bio/Michael_LiPetri_Jr..txt,,,,,,
-image/Michelle_Steel.jpeg,bio/Michelle_Steel.txt,,,,,,
-image/Michelle_Vallejo.jpg,bio/Michelle_Vallejo.txt,,,,,,
-image/Mike_Erickson.jpg,bio/Mike_Erickson.txt,,,,,,
-image/Mike_Garcia.jpeg,bio/Mike_Garcia.txt,,,,,,
-image/Mike_Slaiba.jpeg,bio/Mike_Slaiba.txt,,,,,,
-image/Mondaire_Jones.png,bio/Mondaire_Jones.txt,,,,,,
-image/Monica_De_La_Cruz.jpg,bio/Monica_De_La_Cruz.txt,,,,,,
-image/Monica_Tranel.jpeg,bio/Monica_Tranel.txt,,,,,,
-image/Nicholas_Begich.png,bio/Nicholas_Begich.txt,,,,,,
-image/Nicholas_J._LaLota.jpg,bio/Nicholas_J._LaLota.txt,,,,,,
-image/Pat_Ryan.png,bio/Pat_Ryan.txt,,,,,,
-image/Paul_Hudson.jpeg,bio/Paul_Hudson.txt,,,,,,
-image/Paul_Junge.jpeg,bio/Paul_Junge.txt,,,,,,
-image/Rachel_Dailey.jpeg,bio/Rachel_Dailey.txt,,,,,,
-image/Randell_Niemeyer.jpeg,bio/Randell_Niemeyer.txt,,,,,,
-image/Rebecca_Cooke.jpg,bio/Rebecca_Cooke.txt,,,,,,
-image/Rob_Bresnahan_Jr..jpg,bio/Rob_Bresnahan_Jr..txt,,,,,,
-image/Rob_Mercuri.jpg,bio/Rob_Mercuri.txt,,,,,,
-image/Ron_Quince.jpeg,bio/Ron_Quince.txt,,,,,,
-image/Rudy_Salas.jpeg,bio/Rudy_Salas.txt,,,,,,
-image/Ryan_Mackenzie.jpg,bio/Ryan_Mackenzie.txt,,,,,,
-image/Ryan_Zinke.jpeg,bio/Ryan_Zinke.txt,,,,,,
-image/Sam_Liccaro.jpeg,bio/Sam_Liccaro.txt,,,,,,
-image/Scott_Baugh.jpeg,bio/Scott_Baugh.txt,,,,,,
-image/Scott_Perry.jpg,bio/Scott_Perry.txt,,,,,,
-image/Sonja_Feintech.jpg,bio/Sonja_Feintech.txt,,,,,,
-image/Steve_Barcelo.jpeg,bio/Steve_Barcelo.txt,,,,,,
-image/Susan_Altman.jpg,bio/Susan_Altman.txt,,,,,,
-image/Susan_Hall.jpeg,bio/Susan_Hall.txt,,,,,,
-image/Susan_Wild.jpg,bio/Susan_Wild.txt,,,,,,
-image/Susie_Lee.jpeg,bio/Susie_Lee.txt,,,,,,
-image/Thomas_Bowman.jpeg,bio/Thomas_Bowman.txt,,,,,,
-image/Thomas_Kean_Jr..jpg,bio/Thomas_Kean_Jr..txt,,,,,,
-image/Tom_Bailey.jpg,bio/Tom_Bailey.txt,,,,,,
-image/Tom_Barrett.jpeg,bio/Tom_Barrett.txt,,,,,,
-image/Tom_Pruss.jpg,bio/Tom_Pruss.txt,,,,,,
-image/Tom_Suozzi.jpg,bio/Tom_Suozzi.txt,,,,,,
-image/Tony_Vargas.jpeg,bio/Tony_Vargas.txt,,,,,,
-image/Vicente_Gonzalez_Jr..jpg,bio/Vicente_Gonzalez_Jr..txt,,,,,,
-image/Will_Rollins.jpeg,bio/Will_Rollins.txt,,,,,,
-image/Yadira_Caraveo.jpeg,bio/Yadira_Caraveo.txt,,,,,,
-image/Yvette_Herrell.jpg,bio/Yvette_Herrell.txt,,,,,,
-image/Zach_Nunn.jpeg,bio/Zach_Nunn.txt,,,,,,
+image_name,bio_name,exclude,info_quality_DZ,trial_type1,trial_type2,trial_type3,check_question,check_answer,participant_group
+image/Adam_Frisch.jpeg,bio/Adam_Frisch.txt,0,medium,photo,dual,bio,Adam Frische was a currency trader for 10 years,1,1
+image/Adam_Gray.jpeg,bio/Adam_Gray.txt,0,high,photo,dual,bio,Adam Gray does not support defunding general education,1,1
+image/Adam_Withrow.jpeg,bio/Adam_Withrow.txt,0,low,photo,dual,bio,Adam Withrow studied Economics and Political Science in college,0,1
+image/Alison_Esposito.png,bio/Alison_Esposito.txt,0,medium,photo,dual,bio,Alison Esposito served in the Los Angeles Police Department for 25 years,0,1
+image/Amish_Shah.jpeg,bio/Amish_Shah.txt,0,high,photo,dual,bio,Amish Shah received a Doctor of Medicine degree at Northwestern's Feinberg School of Medicine,1,1
+image/Andrea_Kirby.jpeg,bio/Andrea_Kirby.txt,0,low,photo,dual,bio,Andrea Kirby supports federal education standards for states,0,1
+image/Andrea_Salinas.png,bio/Andrea_Salinas.txt,0,high,photo,dual,bio,"Andrea Salinas comes from a family with a strong artistic background. Her father is an art history professor at the University of California, Berkeley",0,1
+image/Angie_Craig.jpeg,bio/Angie_Craig.txt,0,high,photo,dual,bio,Angie Craig was previously the Global Resources Leader at Saint Jude Medical and is currently the director at Saint Jude's Global Human Resources Group,1,1
+image/Anthony_DEsposito.jpg,bio/Anthony_DEsposito.txt,0,high,bio,photo,dual,Anthony DEsposito was an elected member of the Washington House of Representatives from the 15th District ,0,1
+image/Austin_Theriault.jpeg,bio/Austin_Theriault.txt,0,medium,bio,photo,dual,"Austin Theriault was born and raised in San Antonio, Texas",0,1
+image/Brandon_Williams.jpg,bio/Brandon_Williams.txt,0,high,bio,photo,dual,"Brandon Williams co-founded the startup funding company, IgniteIP, and was the leader of the industrial process company, CPlane ",1,1
+image/Brett_Smith.png,bio/Brett_Smith.txt,0,low,bio,photo,dual,Brett Smith lives in Kentucky in a town called Louisville,0,1
+image/Carl_Marlinga.jpeg,bio/Carl_Marlinga.txt,0,low,bio,photo,dual,"Carl Marlinga lives in Jacksonville, Florida with his wife",0,1
+image/Chris_Baum.jpeg,bio/Chris_Baum.txt,0,high,bio,photo,dual,"Chris Baum served in the U.S. Navy for 20 years, holding the position of supply officer",1,1
+image/Chris_DeLuzio.png,bio/Chris_DeLuzio.txt,0,high,bio,photo,dual,"Chris DeLuzio studied philosophy, nutrition, and psychology in community college",0,1
+image/Curtis_Hertel.jpeg,bio/Curtis_Hertel.txt,0,medium,bio,photo,dual,Curtis Hertel has a Bachelor of Science degree in Engineering from the University of San Francisco,0,1
+image/Dan_Newhouse.jpg,bio/Dan_Newhouse.txt,0,high,dual,bio,photo,Dan Newhouse received his Agricultural Economics Bachelor degree from Washington State University,1,1
+image/Dave_Min.jpeg,bio/Dave_Min.txt,0,high,dual,bio,photo,"Dave Min was previously an assistant philosophy professor at University of California, Irvine",0,1
+image/David_Schweikert.jpeg,bio/David_Schweikert.txt,0,high,dual,bio,photo,David Schweikert grew up in Midwest in a single-mother household,0,1
+image/David_Valadao.jpeg,bio/David_Valadao.txt,0,high,dual,bio,photo,"David Valadao went to University of California, Davis and graduate in 3 years with Bachlor degree of Agricultural Science",0,1
+image/Derek_Merrin.jpg,bio/Derek_Merrin.txt,0,high,dual,bio,photo,Derek Merrin elected as state representative of Ohio House of Representatives twice,1,1
+image/Derek_Tran.jpeg,bio/Derek_Tran.txt,0,medium,dual,bio,photo,Derek Tran got his Doctor degree from Glendale University College of Law,1,1
+image/Derrick_Anderson.jpg,bio/Derrick_Anderson.txt,0,medium,dual,bio,photo,Derrick Anderson's favorite superhero is Iron Man,0,1
+image/Derrick_Van_Orden.png,bio/Derrick_Van_Orden.txt,0,high,dual,bio,photo,Derrick Van Orden joined the Wisconsin's Police Department and was promoted as conmissioner in 2014,0,1
+image/Diana_Merenda.jpeg,bio/Diana_Merenda.txt,0,low,photo,dual,bio,Diana Merenda worked as an economics professor in Baruch College for seven years,0,2
+image/Dina_Titus.jpeg,bio/Dina_Titus.txt,0,high,photo,dual,bio,Dina Titus served as California Senate's Minority Leader from 1993 to 2009,0,2
+image/Don_Bacon.jpeg,bio/Don_Bacon.txt,0,high,photo,dual,bio,"Don Bacon chose Life Science as undergraduate major, although he always has a passion in Political Science",0,2
+image/Donald_Davis.jpg,bio/Donald_Davis.txt,0,high,photo,dual,bio,Donald Davis worked in the tobacco fields as a young man. He and his wife live in North Carolina,1,2
+image/Drew_Johnson.jpeg,bio/Drew_Johnson.txt,0,medium,photo,dual,bio,Drew Johnson worked at the National Taxpayers Union,1,2
+image/Emilia_Sykes.png,bio/Emilia_Sykes.txt,0,high,photo,dual,bio,Emilia Sykes supports removing sales tax on feminine hygiene products,1,2
+image/Eric_Sorenson.jpeg,bio/Eric_Sorenson.txt,0,low,photo,dual,bio,Eric Sorenson ran for the U.S. House of Representatives in Illinois’s 17th Congressional District in 2022 and lost by a narrow margin,0,2
+image/Eugene_Vindman.jpg,bio/Eugene_Vindman.txt,0,high,photo,dual,bio,Eugene Vindman was born and grew up in New York City,0,2
+image/Evan_Low.jpeg,bio/Evan_Low.txt,0,high,bio,photo,dual,Evan Low is the youngest Mexican American congressman in the nation,0,2
+image/Frank_Mrvan.jpeg,bio/Frank_Mrvan.txt,0,medium,bio,photo,dual,Frank Mrvan supports anti-semitism and socialism within America,0,2
+image/Gabe_Evans.jpeg,bio/Gabe_Evans.txt,0,high,bio,photo,dual,"Gabe Evans is married to Taylor Moore, with one daughter and two dogs",0,2
+image/Gabriel_Vasquez.jpg,bio/Gabriel_Vasquez.txt,0,high,bio,photo,dual,Gabriel Vasquez received Bachelor of Arts degree in English and Journalism from New Mexico State University,1,2
+image/George_Logan.jpeg,bio/George_Logan.txt,0,high,bio,photo,dual,George Logan is fluent in French and Italian,0,2
+image/George_Whitesides.jpeg,bio/George_Whitesides.txt,0,medium,bio,photo,dual,George Whitesides was appointed chief of staff of NASA during the Obama Administration and received NASA's highest reward,1,2
+image/Greg_Kidd.jpeg,bio/Greg_Kidd.txt,0,low,bio,photo,dual,Gregg Kidd founded a courier dispatch comapny called Courier Express,0,2
+image/Henry_Cuellar.jpg,bio/Henry_Cuellar.txt,0,high,bio,photo,dual,Henry Cuellar supports reproductive rights and gun-control legislation,0,2
+image/Hillary_Scholten.jpeg,bio/Hillary_Scholten.txt,0,high,dual,bio,photo,Hillary Scholten has a Juris Doctor degree from the University of Maryland Thurgood School of Law,1,2
+image/Jahana_Hayes.jpeg,bio/Jahana_Hayes.txt,0,high,dual,bio,photo,Jahana Hayes received her Master of Business Administration from University of Michigan,0,2
+image/James_Wiley.jpeg,bio/James_Wiley.txt,0,low,dual,bio,photo,James Wiley supports the advancement of medical science and term limits for government members,1,2
+image/Janelle_Bynum.jpg,bio/Janelle_Bynum.txt,0,medium,dual,bio,photo,Janelle Bynum did not attend college. She has a high school diploma,0,2
+image/Janelle_Stelson.png,bio/Janelle_Stelson.txt,0,low,dual,bio,photo,Janelle Stelson assisted her father-in-law in running a Taco Bell franchise,0,2
+image/Jared_Golden.jpeg,bio/Jared_Golden.txt,0,high,dual,bio,photo,"Jared Golden served in the U.S. Marine Corps, completing two tours in Iraq and Afghanistan",1,2
+image/Jeffrey_Hurd.jpeg,bio/Jeffrey_Hurd.txt,0,medium,dual,bio,photo,Jeffrey Hurd started his own law firm after practicing law at Sullivan & Cromwell in New York ,1,2
+image/Jennifer_Kiggans.png,bio/Jennifer_Kiggans.txt,0,high,dual,bio,photo,Jennifer Kiggans has both a Bachelor's and Master's of Science degree in Nursing,1,2
+image/Jerrod_Sessler.jpg,bio/Jerrod_Sessler.txt,0,low,photo,dual,bio,Jerrod Sessler has a Bachelor of Science degree in Engineering from University of Michigan,0,3
+image/Joe_Kent.jpg,bio/Joe_Kent.txt,0,medium,photo,dual,bio,"Joe Kent's first wife was named Shannon, and his current wife is named Heather",1,3
+image/Joe_Teirab.jpeg,bio/Joe_Teirab.txt,0,medium,photo,dual,bio,Joe Teirab received his Juris Doctor degree from Harvard Law School,1,3
+image/John_Avlon.jpg,bio/John_Avlon.txt,0,medium,photo,dual,bio,John Avlon was the editor-in-chief of The Atlantic for five years,0,3
+image/John_Duarte.jpeg,bio/John_Duarte.txt,0,low,photo,dual,bio,John Duarte received his Ph.D. from Stanford University,0,3
+image/John_Howe.png,bio/John_Howe.txt,0,high,photo,dual,bio,John Howe was an elected member of the Wyoming Senate from the 21st District,0,3
+image/John_James.jpeg,bio/John_James.txt,0,high,photo,dual,bio,John James has a Master of Science degree in Supply Chain Management and Information Systems from Pennsylvania State University,1,3
+image/John_Mannion.png,bio/John_Mannion.txt,0,medium,photo,dual,bio,"John Mannion has a Bachelor and Master of Arts, and a Ph.D. in Education",0,3
+image/Joseph_McGraw.jpeg,bio/Joseph_McGraw.txt,0,medium,bio,photo,dual,"Joseph McGraw studied Nursing at University of San Francisco, but dropped out after two years",0,3
+image/Josh_Riley.jpg,bio/Josh_Riley.txt,0,high,bio,photo,dual,Josh Riley was a partner to only one law firm exclusively,0,3
+image/Juan_Ciscomani.jpeg,bio/Juan_Ciscomani.txt,0,high,bio,photo,dual,Juan Ciscomani enjoys being a coach to his children's soccer teams,0,3
+image/Ken_Calvert.jpeg,bio/Ken_Calvert.txt,0,high,bio,photo,dual,Ken Calvert has a Bachelor of Science degree in Computer Science from University of Southern California,0,3
+image/Kevin_Coughlin.jpg,bio/Kevin_Coughlin.txt,0,high,bio,photo,dual,"Kevin Coughlin was the Chairman of the Senate Health, Human Services, and Aging Committee ",1,3
+image/Kirsten_Engel.jpeg,bio/Kirsten_Engel.txt,0,high,bio,photo,dual,"Kirsten Engel and her husband, Isaac, have two sons named Angelo and Kaiden",0,3
+image/Kristen_Rivet.jpeg,bio/Kristen_Rivet.txt,0,high,bio,photo,dual,Kristen Rivet has an Associate's degree in Criminal Justice from Northeastern University,0,3
+image/Lana_Leguia.jpg,bio/Lana_Leguia.txt,0,low,bio,photo,dual,Lana Leguia earned a high school diploma through homeschooling,1,3
+image/Lanan_Baccam.jpeg,bio/Lanan_Baccam.txt,0,medium,dual,bio,photo,Lanon Baccam earned her Juris Doctor degree from University of Pennsylvania,0,3
+image/Laura_Gillen.jpg,bio/Laura_Gillen.txt,0,medum,dual,bio,photo,Laura Gillen worked as an adjunct professor at University of Mount Saint Vincent,0,3
+image/Laurie_Buckhout.png,bio/Laurie_Buckhout.txt,0,medium,dual,bio,photo,"Laurie Buckhout served in the U.S. Army for 26 years, reaching the rank of Colonel",1,3
+image/Lori_Chavez-DeRemer.jpg,bio/Lori_Chavez-DeRemer.txt,0,medium,dual,bio,photo,Lori Chavez-DeRemer is the first in her family to graduate from college,1,3
+image/Louis_Palus.jpeg,bio/Louis_Palus.txt,0,low,dual,bio,photo,Louis Palus has a Bachelor of Arts degree in Philosophy from San Diego State University,0,3
+image/Luis_Pozzolo.jpeg,bio/Luis_Pozzolo.txt,0,low,dual,bio,photo,Luis Pozzolo and his wife immigrated to the U.S. in 1998 from Ecuador,0,3
+image/Marcus_Molinaro.jpg,bio/Marcus_Molinaro.txt,0,high,dual,bio,photo,Marcus Molinaro has an Associate of Science degree in Humanities and Social Sciences from Dutchess Community College ,1,3
+image/Marcy_Kaptur.jpg,bio/Marcy_Kaptur.txt,0,high,dual,bio,photo,Marcy Kaptur is the longest serving woman in congressional history,1,3
+image/Marie_Gluesenkamp_Perez.png,bio/Marie_Gluesenkamp_Perez.txt,0,medium,photo,dual,bio,Marie Gluesenkamp Perez has a wife named Sophie. They have no children together,0,4
+image/Mark_Armodei.jpeg,bio/Mark_Armodei.txt,0,high,photo,dual,bio,Mark Amodei was a member of the Nevada Senate and the Nevada Assembly,1,4
+image/Mark_Robertson.jpeg,bio/Mark_Robertson.txt,0,low,photo,dual,bio,Mark Robertson has a Bachelor of Science in Engineering from the University of Nevada,0,4
+image/Mary_Peltola.png,bio/Mary_Peltola.txt,0,high,photo,dual,bio,Mary Peltola served as a judge on the Orutsararmiut Native Council's tribal court,1,4
+image/Matt_Cartwright.jpg,bio/Matt_Cartwright.txt,0,high,photo,dual,bio,Matt Cartwright loves the Marvel Comics. His favorite hero is Captain America,1,4
+image/Mayra_Flores.jpg,bio/Mayra_Flores.txt,0,medium,photo,dual,bio,"Mayra Flores supports abortion bans, school choice, securing the border, and religious freedom",1,4
+image/Michael_Lawler.jpg,bio/Michael_Lawler.txt,0,high,photo,dual,bio,Michael Lawler received his Bachelor of Science degree in Accouting and Finance from Manhattan College,1,4
+image/Michael_LiPetri_Jr..jpg,bio/Michael_LiPetri_Jr..txt,0,medium,bio,photo,dual,Michael LiPetri Jr. supports nursing homes accepting COVID-19 positive patients,0,4
+image/Michelle_Steel.jpeg,bio/Michelle_Steel.txt,0,high,bio,photo,dual,"Michelle Steel supports abortion and same-sex marriage, but does not support combating the homelessness crisis or creating jobs",0,4
+image/Michelle_Vallejo.jpg,bio/Michelle_Vallejo.txt,0,low,bio,photo,dual,Michelle Vallejo has a Bachelor of Science degree in Psychology from Columbia,0,4
+image/Mike_Erickson.jpg,bio/Mike_Erickson.txt,0,low,bio,photo,dual,Mike Erickson has a Bachelor's degree in Business from Portland State University,1,4
+image/Mike_Garcia.jpeg,bio/Mike_Garcia.txt,0,medium,bio,photo,dual,"Mike Garcia received his Master of Arts degree in National Security Policy from Georgetown University, graduating in the top 3% of his glass",1,4
+image/Mondaire_Jones.png,bio/Mondaire_Jones.txt,0,high,bio,photo,dual,Mondaire Jones was raised on a ranch in Montana by both of his parents,0,4
+image/Monica_De_La_Cruz.jpg,bio/Monica_De_La_Cruz.txt,0,medium,bio,photo,dual,"Monica De La Cruz studied Marketing at the University of Texas, San Antonio",1,4
+image/Monica_Tranel.jpeg,bio/Monica_Tranel.txt,0,low,bio,photo,dual,Monica Tranel has a Juris Doctor degree from Rutgers University-Camden,1,4
+image/Nicholas_Begich.png,bio/Nicholas_Begich.txt,0,medium,dual,bio,photo,Nicholas Begich founded a software development company called ScienceSoft and was its Chief Financial Officer,0,4
+image/Nicholas_J._LaLota.jpg,bio/Nicholas_J._LaLota.txt,0,high,dual,bio,photo,Nicholas J. LaLota has a Bachelor of Arts degree in Philosphy,0,4
+image/Pat_Ryan.png,bio/Pat_Ryan.txt,0,high,dual,bio,photo,Pat Ryan worked at various technology companies and co-founded Praescient Analytics,1,4
+image/Paul_Hudson.jpeg,bio/Paul_Hudson.txt,0,medium,dual,bio,photo,Paul Hudson received his Bachelor's degree from Cornell University,1,4
+image/Paul_Junge.jpeg,bio/Paul_Junge.txt,0,low,dual,bio,photo,Paul Junge worked at his family-owned restaurant for 10 years,0,4
+image/Randell_Niemeyer.jpeg,bio/Randell_Niemeyer.txt,0,medium,dual,bio,photo,"Randell Niemeyer graduated from the same high school as his father, daughter, and son",1,4
+image/Rebecca_Cooke.jpg,bio/Rebecca_Cooke.txt,0,low,dual,bio,photo,Rebecca Cooke does not support granting tax exemptions to small start-up corporations,0,4
+image/Rob_Bresnahan_Jr..jpg,bio/Rob_Bresnahan_Jr..txt,0,medium,dual,bio,photo,Rob Bresnahan Jr. has a Bachelor of Arts degree in Business Administration from the University of Scranton,1,4
+image/Rob_Mercuri.jpg,bio/Rob_Mercuri.txt,0,medium,photo,dual,bio,"Rob Mercuri served in the U.S. Army for nine years, reaching the rank of captain",1,5
+image/Ron_Quince.jpeg,bio/Ron_Quince.txt,0,low,photo,dual,bio,Ron Quince founded Ron Q Business Solutions and Ron Quince Inc.,1,5
+image/Rudy_Salas.jpeg,bio/Rudy_Salas.txt,0,high,photo,dual,bio,Rudy Salas received his MPhil in Geographic Information Systems and Remote Sensing from King’s College ,0,5
+image/Ryan_Mackenzie.jpg,bio/Ryan_Mackenzie.txt,0,high,photo,dual,bio,Ryan Mackenzie does not support keeping jobs from illegal immigrants or increasing border security and military funding,0,5
+image/Ryan_Zinke.jpeg,bio/Ryan_Zinke.txt,0,high,photo,dual,bio,"Ryan Zinke served in the U.S. Army for 20 years, reaching the rank of captain",0,5
+image/Sam_Liccaro.jpeg,bio/Sam_Liccaro.txt,0,high,photo,dual,bio,"Sam Liccardo has a Bachelor's degree in Government from Georgetown University, graduating magna cum laude",1,5
+image/Scott_Baugh.jpeg,bio/Scott_Baugh.txt,0,high,photo,dual,bio,"Scott Baugh has a Juris Doctor degree, graduating with honors",1,5
+image/Scott_Perry.jpg,bio/Scott_Perry.txt,0,high,bio,photo,dual,Scott Perry has a Master of Business Administration of the University of Pennsylvania,0,5
+image/Sonja_Feintech.jpg,bio/Sonja_Feintech.txt,0,low,bio,photo,dual,"Sonja Feintech worked as a farmer, small business owner, political action director, small farm consultant, and medical freedom activist",1,5
+image/Susan_Altman.jpg,bio/Susan_Altman.txt,0,low,bio,photo,dual,Susan Altman played on both her high school and college's volleyball teams,0,5
+image/Susan_Wild.jpg,bio/Susan_Wild.txt,0,high,bio,photo,dual,Susan Wild has a Bachelor of Arts degree from American University,1,5
+image/Susie_Lee.jpeg,bio/Susie_Lee.txt,0,medium,bio,photo,dual,Susie Lee supports high quality and accessible eduaction and healthcare. She does not support anti-LGBTQ discrimination,1,5
+image/Thomas_Bowman.jpeg,bio/Thomas_Bowman.txt,0,low,bio,photo,dual,"Thomas Bowman served in the U.S. Navy for over 30 years, reaching the rank of Commander",0,5
+image/Thomas_Kean_Jr..jpg,bio/Thomas_Kean_Jr..txt,0,high,bio,photo,dual,"Thomas Kean Jr. and his wife live in Orlando, Florida with no children",0,5
+image/Tom_Barrett.jpeg,bio/Tom_Barrett.txt,0,high,bio,photo,dual,Tom Barrett reached the rank of Chief Warrant Officer 2 in the Michigan Army National Guard,1,5
+image/Tom_Pruss.jpg,bio/Tom_Pruss.txt,0,low,dual,bio,photo,Tom Pruss has an Associate's degree from Ohio State University,0,5
+image/Tom_Suozzi.jpg,bio/Tom_Suozzi.txt,0,high,dual,bio,photo,Tom Suozzi received a Bachelor of Science degree in Accounting from Boston College,1,5
+image/Tony_Vargas.jpeg,bio/Tony_Vargas.txt,0,high,dual,bio,photo,"Tony Vargas supports strengthening public schools, improving access to health care, and encouraging technology and innovation",1,5
+image/Vicente_Gonzalez_Jr..jpg,bio/Vicente_Gonzalez_Jr..txt,0,high,dual,bio,photo,Vicente Gonzalez Jr. has a Bachelor of Science degree in Engineering from the University of Texas at Austin,0,5
+image/Will_Rollins.jpeg,bio/Will_Rollins.txt,0,low,dual,bio,photo,"Will Rollins supports lowering costs on working families, expanding access to healthcare, and improving public education",1,5
+image/Yadira_Caraveo.jpeg,bio/Yadira_Caraveo.txt,0,high,dual,bio,photo,Yadira Caraveo was Colorado's first Latina member of Congress,1,5
+image/Yvette_Herrell.jpg,bio/Yvette_Herrell.txt,0,medium,dual,bio,photo,Yvette Herrell supports defunding the police,0,5
+image/Zach_Nunn.jpeg,bio/Zach_Nunn.txt,0,high,dual,bio,photo,Zach Nunn has a Bachelor of Arts degree in Political Science and International Relations from Drake University,1,5

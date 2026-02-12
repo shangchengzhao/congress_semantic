@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="data:,">
     <title>Social Impression Rating Task</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
@@ -245,13 +246,53 @@
             color: black;
             z-index: 1000;
         }
+        
+        .free-writing-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .rating-display {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .free-writing-prompt {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 30px 0 15px 0;
+        }
+        
+        .free-writing-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        
+        .free-writing-textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
     </style>
 </head>
 <body></body>
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '23';
+    const EXPERIMENT_VERSION = '29';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -267,6 +308,7 @@
         on_finish: function() {
             // Add assigned trial type, participant ID, start time, SONA code, and version to all data rows
             jsPsych.data.get().addToAll({
+                assigned_group: assignedGroup,
                 assigned_trial_type: assignedTrialType,
                 participant_id: participantID,
                 experiment_start_time: experimentStartTime,
@@ -278,10 +320,12 @@
             const allData = jsPsych.data.get().values();
             // Ensure all rows contain the primary expected keys (so CSV headers include them even if first row lacks them)
             const requiredFields = [
-                'assigned_trial_type', 'participant_id', 'experiment_start_time', 'sona_survey_code', 'experiment_version',
-                'task', 'block', 'stimulus_name', 'stimulus_trial_type', 'question', 'secondary_question',
-                'familiarity_rating', 'main_rating', 'similarity_rating', 'responded_on_time', 'reaction_time_ms', 'response_time_limit_ms',
-                'check_question', 'check_answer', 'correct', 'timed_out'
+                'assigned_group', 'assigned_trial_type', 'participant_id', 'experiment_start_time', 'sona_survey_code', 'experiment_version',
+                'task', 'block', 'stimulus_name', 'stimulus_trial_type', 'competence_response', 'vote_response',
+                'familiarity_response', 'confidence_response', 'responded_on_time', 'reaction_time_ms', 'response_time_limit_ms',
+                'attention_check_question', 'attention_check_correct_key', 'attention_check_response',
+                'memory_check_question', 'memory_check_correct_answer', 'memory_check_response', 'memory_check_correct',
+                'free_response'
             ];
             for (let row of allData) {
                 for (let f of requiredFields) {
@@ -290,18 +334,18 @@
                     }
                 }
             }
-            // Debug: Log data summary keys to verify fields present (e.g., main_rating)
+            // Debug: Log data summary keys to verify fields present (e.g., rating)
             try {
                 if (allData && allData.length) {
                     console.log('Total rows to send:', allData.length);
                     // Show the keys present in the last row and a sample of a rating row
                     const allKeys = Object.keys(allData[allData.length - 1]);
                     console.log('Keys in last data row:', allKeys);
-                    const sampleRatingRow = [...allData].reverse().find(r => 'main_rating' in r || 'familiarity_rating' in r || 'similarity_rating' in r);
+                    const sampleRatingRow = [...allData].reverse().find(r => 'competence_response' in r || 'vote_response' in r || 'familiarity_response' in r);
                     if (sampleRatingRow) {
                         console.log('Sample rating row found:', sampleRatingRow);
                     } else {
-                        console.warn('No rating rows with main_rating/familiarity_rating/similarity_rating were found in data');
+                        console.warn('No rating rows with competence_response/vote_response/familiarity_response were found in data');
                     }
                 } else {
                     console.warn('No data rows to send.');
@@ -309,12 +353,12 @@
                 } catch (e) {
                 console.error('Error while inspecting data before sending:', e);
             }
-            // Show a per-row presence/value for main_rating
+            // Show a per-row presence/value for competence and vote responses
             try {
-                const mainRatingPresence = allData.map((r, i) => ({index: i, hasKey: Object.prototype.hasOwnProperty.call(r, 'main_rating'), value: r.main_rating}));
-                console.log('main_rating presence/value per row (first 30 rows):', JSON.stringify(mainRatingPresence.slice(0, 30)));
+                const responsePresence = allData.map((r, i) => ({index: i, competence: r.competence_response, vote: r.vote_response}));
+                console.log('competence/vote response presence per row (first 30 rows):', JSON.stringify(responsePresence.slice(0, 30)));
             } catch (e) {
-                console.warn('Could not compute main_rating presence list:', e);
+                console.warn('Could not compute response presence list:', e);
             }
             
             // Send data to PHP backend
@@ -323,12 +367,13 @@
             // Additional diagnostics of the payload we are about to send
             try {
                 const ratingRows = allData.filter(r => r.task === 'rating');
-                const withMainKey = ratingRows.filter(r => Object.prototype.hasOwnProperty.call(r, 'main_rating'));
-                const withMainValue = ratingRows.filter(r => r.main_rating !== null && r.main_rating !== undefined && r.main_rating !== '');
+                const withCompetence = ratingRows.filter(r => r.competence_response !== null && r.competence_response !== undefined && r.competence_response !== '');
+                const withVote = ratingRows.filter(r => r.vote_response !== null && r.vote_response !== undefined && r.vote_response !== '');
                 console.log('Rating rows (task=="rating"):', ratingRows.length);
-                console.log('Rating rows with main_rating key present (even if null):', withMainKey.length);
-                console.log('Rating rows with non-empty main_rating:', withMainValue.length);
-                if (withMainValue.length > 0) console.log('Example rating row with main_rating value:', JSON.stringify(withMainValue[0]));
+                console.log('Rating rows with non-empty competence_response:', withCompetence.length);
+                console.log('Rating rows with non-empty vote_response:', withVote.length);
+                if (withCompetence.length > 0) console.log('Example competence rating row:', JSON.stringify(withCompetence[0]));
+                if (withVote.length > 0) console.log('Example vote rating row:', JSON.stringify(withVote[0]));
                 // Print a small payload sample (first 5 rows) so we can see exactly which keys are present
                 const payloadSample = allData.slice(0, 5).map(r => {
                     const copy = {};
@@ -407,7 +452,7 @@
     // SONA completion URL - Configured for UCSB SONA system
     // Format: https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=XXXX&credit_token=YYYY&survey_code=%SURVEY_CODE%
     // The survey code will be appended automatically from the URL parameter
-    const SONA_COMPLETION_URL = 'https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=4667&credit_token=042f348276d14b4db26f57efe7356440&survey_code=';
+    const SONA_COMPLETION_URL = 'https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=4708&credit_token=3f94872037f940acbbe8bb7a6325cd81&survey_code=';
     // ============================
     
     // Generate unique participant ID
@@ -434,28 +479,42 @@
         block1: new Set(),
         block2: new Set()
     };
+    
+    // Track ratings for each candidate for free writing component
+    let candidateRatings = {
+        block1: {},
+        block2: {}
+    };
 
     // Define the questions for the two blocks
     const questions = [
         {
             text: "How good do you think this person would be as a member of congress?",
             scale_labels: ["Not at all", "Very much"],
-            secondaryQuestion: null  // Familiarity is always shown in block 1
+            confidenceQuestion: {
+                text: "How confident are you in your judgment?",
+                scale_labels: ["Not at all", "Very much"]
+            },
+            secondaryQuestion: null  // No similarity question in block 1
         },
         {
             text: "In general, how likely would you be to vote for this person as a U.S. House Representative?",
             scale_labels: ["Not at all", "Very much"],
-            secondaryQuestion: {
-                text: "How similar do you consider yourself to this person in ideology, political views, and background?",
-                scale_labels: ["Not at all", "Very much"],
-                showForTypes: ["bio", "dual"]  // Only show for bio and dual conditions
-            }
+            confidenceQuestion: null,  // No confidence question in block 2
+            secondaryQuestion: null  // Similarity question removed from block 2
         }
     ];
 
+    // Randomly assign participant to one of five groups
+    const assignedGroup = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+    
     // Randomly assign participant to one of three trial type conditions
     const assignedTrialType = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
-    console.log('Assigned trial type condition:', assignedTrialType);
+    
+    console.log('====================================');
+    console.log('Assigned Participant Group:', assignedGroup);
+    console.log('Assigned Trial Type Condition:', assignedTrialType);
+    console.log('====================================');
     
     // Load CSV data and parse it
     let stimuli = [];
@@ -511,7 +570,8 @@
     // Function to load materials from CSV
     async function loadMaterials() {
         try {
-            const response = await fetch('materials.csv');
+            // Add cache-busting parameter to ensure fresh CSV load
+            const response = await fetch('materials.csv?v=' + Date.now());
             const text = await response.text();
             const data = parseCSV(text);
             
@@ -520,6 +580,9 @@
             for (let row of data) {
                 // Skip if exclude flag is set
                 if (row.exclude === '1') continue;
+                
+                // Skip if not in assigned participant group
+                if (row.participant_group && row.participant_group !== String(assignedGroup)) continue;
                 
                 // Skip if no trial type assigned for this condition
                 if (!row[trialTypeColumn]) continue;
@@ -544,7 +607,12 @@
                 }
             }
             
-            console.log('Loaded', stimuli.length, 'stimuli');
+            console.log('Loaded', stimuli.length, 'stimuli for Group', assignedGroup, 'Trial Type', assignedTrialType);
+            console.log('Stimuli breakdown by type:', {
+                photo: stimuli.filter(s => s.type === 'photo').length,
+                bio: stimuli.filter(s => s.type === 'bio').length,
+                dual: stimuli.filter(s => s.type === 'dual').length
+            });
             
             // TEST MODE: Limit to 5 random candidates for faster testing
             if (TEST_MODE && stimuli.length > 5) {
@@ -689,6 +757,7 @@
                 '<p>• Press <b>SPACEBAR</b> to submit your answers</p>' +
                 '<p><b>Important:</b> Please do your best to make quick and legitimate responses, or you will see a warning.</p>' +
                 '<p>There will be occasional <b>attention check questions</b> and <b>memory check questions</b> - please read carefully!</p>' +
+                '<p><b>At the end of each block,</b> you will be asked to briefly explain your judgment for a few randomly selected candidates.</p>' +
                 '<p>Press the Next button to begin.</p>'
             ],
             show_clickable_nav: true
@@ -795,24 +864,26 @@
                         '<input type="hidden" id="familiarity-value" value="">';
                 }
                 
-                // Check if we need to show secondary question (similarity)
-                let secondaryQuestionHTML = '';
-                console.log('Block:', block_num, 'Trial type:', trial_type, 'Question has secondary:', !!question.secondaryQuestion);
-                if (question.secondaryQuestion) {
-                    console.log('Secondary question showForTypes:', question.secondaryQuestion.showForTypes);
-                    console.log('Includes trial_type?', question.secondaryQuestion.showForTypes.includes(trial_type));
-                }
-                if (question.secondaryQuestion && question.secondaryQuestion.showForTypes.includes(trial_type)) {
-                    secondaryQuestionHTML = '<div class="question-text" style="margin-top: 40px;">' + question.secondaryQuestion.text + '</div>' +
+                // Check if we need to show confidence question (block 1 only)
+                let confidenceQuestionHTML = '';
+                if (question.confidenceQuestion) {
+                    confidenceQuestionHTML = '<div class="question-text" style="margin-top: 40px;">' + question.confidenceQuestion.text + '</div>' +
                         '<div class="slider-wrapper">' +
-                        '<input type="range" min="1" max="7" value="4" class="slider" id="secondary-slider">' +
-                        '<span class="slider-value" id="secondary-value">4</span>' +
+                        '<input type="range" min="1" max="7" value="4" class="slider" id="confidence-slider">' +
+                        '<span class="slider-value" id="confidence-value">4</span>' +
                         '</div>' +
                         '<div class="slider-labels">' +
-                        '<span>' + question.secondaryQuestion.scale_labels[0] + '</span>' +
-                        '<span>' + question.secondaryQuestion.scale_labels[1] + '</span>' +
+                        '<span>' + question.confidenceQuestion.scale_labels[0] + '</span>' +
+                        '<span>' + question.confidenceQuestion.scale_labels[1] + '</span>' +
                         '</div>';
                 }
+                
+                // Secondary question removed from both blocks
+                let secondaryQuestionHTML = '';
+                
+                // Use different slider IDs based on block
+                const mainSliderId = block_num === 1 ? 'competence-slider' : 'vote-slider';
+                const mainValueId = block_num === 1 ? 'competence-value' : 'vote-value';
                 
                 return '<div class="stimulus-with-rating">' +
                     '<div class="response-indicator">Now you can respond</div>' +
@@ -822,13 +893,14 @@
                     familiarityHTML +
                     '<div class="question-text" style="margin-top: 40px;">' + question.text + '</div>' +
                     '<div class="slider-wrapper">' +
-                    '<input type="range" min="1" max="7" value="4" class="slider" id="main-slider">' +
-                    '<span class="slider-value" id="main-value">4</span>' +
+                    '<input type="range" min="1" max="7" value="4" class="slider" id="' + mainSliderId + '">' +
+                    '<span class="slider-value" id="' + mainValueId + '">4</span>' +
                     '</div>' +
                     '<div class="slider-labels">' +
                     '<span>' + question.scale_labels[0] + '</span>' +
                     '<span>' + question.scale_labels[1] + '</span>' +
                     '</div>' +
+                    confidenceQuestionHTML +
                     secondaryQuestionHTML +
                     '<div class="submit-prompt" id="submit-prompt" style="margin-top: 30px; font-size: 16px; font-style: italic;">Press SPACEBAR to submit your answers</div>' +
                     '</div>' +
@@ -847,19 +919,25 @@
                 // Store current values on the trial object so they persist after DOM is cleared
                 const trialObj = this;
                 trialObj.currentFamiliarity = null;
-                trialObj.currentMainRating = '4';  // default slider value
+                trialObj.currentCompetenceRating = '4';  // default slider value for block 1
+                trialObj.currentVoteRating = '4';  // default slider value for block 2
+                trialObj.currentConfidenceRating = '4';  // default slider value
                 trialObj.currentSecondaryRating = '4';  // default slider value
                 
                 // Track whether user actually interacted with controls
                 trialObj.familiarityClicked = false;
-                trialObj.mainSliderMoved = false;
+                trialObj.competenceSliderMoved = false;
+                trialObj.voteSliderMoved = false;
+                trialObj.confidenceSliderMoved = false;
                 trialObj.secondarySliderMoved = false;
                 
-                // Get slider elements
+                // Get slider elements based on block
                 const familiarityButtons = document.querySelectorAll('.familiarity-button');
                 const familiarityValue = document.getElementById('familiarity-value');
-                const mainSlider = document.getElementById('main-slider');
-                const mainValue = document.getElementById('main-value');
+                const mainSlider = block_num === 1 ? document.getElementById('competence-slider') : document.getElementById('vote-slider');
+                const mainValue = block_num === 1 ? document.getElementById('competence-value') : document.getElementById('vote-value');
+                const confidenceSlider = document.getElementById('confidence-slider');
+                const confidenceValue = document.getElementById('confidence-value');
                 const secondarySlider = document.getElementById('secondary-slider');
                 const secondaryValue = document.getElementById('secondary-value');
                 
@@ -885,9 +963,23 @@
                 if (mainSlider && mainValue) {
                     mainSlider.oninput = function() {
                         mainValue.textContent = this.value;
+                        // Store in trial object based on block
+                        if (block_num === 1) {
+                            trialObj.currentCompetenceRating = this.value;
+                            trialObj.competenceSliderMoved = true;
+                        } else {
+                            trialObj.currentVoteRating = this.value;
+                            trialObj.voteSliderMoved = true;
+                        }
+                    };
+                }
+                
+                if (confidenceSlider && confidenceValue) {
+                    confidenceSlider.oninput = function() {
+                        confidenceValue.textContent = this.value;
                         // Store in trial object
-                        trialObj.currentMainRating = this.value;
-                        trialObj.mainSliderMoved = true;
+                        trialObj.currentConfidenceRating = this.value;
+                        trialObj.confidenceSliderMoved = true;
                     };
                 }
                 
@@ -916,14 +1008,21 @@
                             validationErrors.push('Please select your familiarity with this person');
                         }
                         
-                        // Check main slider
-                        if (!trialObj.mainSliderMoved) {
-                            validationErrors.push('Please move the main rating slider. If your answer is neutral, please move the slider back to the center');
+                        // Check main slider based on block
+                        const sliderMoved = block_num === 1 ? trialObj.competenceSliderMoved : trialObj.voteSliderMoved;
+                        const sliderName = block_num === 1 ? 'competence rating' : 'vote intention';
+                        if (!sliderMoved) {
+                            validationErrors.push('Please move the ' + sliderName + ' slider. If your answer is neutral, please move the slider back to the center');
+                        }
+                        
+                        // Check confidence slider (only if it exists)
+                        if (confidenceSlider && !trialObj.confidenceSliderMoved) {
+                            validationErrors.push('<br>Please move the confidence rating slider. If your answer is neutral, please move the slider back to the center');
                         }
                         
                         // Check secondary slider (only if it exists)
                         if (secondarySlider && !trialObj.secondarySliderMoved) {
-                            validationErrors.push('<br>Please move the similarity rating slider. If your answer is neutral, please move the slider back to the center');
+                            validationErrors.push('<br>Please move the secondary rating slider. If your answer is neutral, please move the slider back to the center');
                         }
                         
                         // If validation fails, show warning
@@ -950,17 +1049,21 @@
                             stimulus_name: stimulus.name,
                             stimulus_trial_type: stimulus.type,
                             block: block_num,
-                            question: question.text,
-                            secondary_question: question.secondaryQuestion ? question.secondaryQuestion.text : null,
-                            familiarity_rating: trialObj.currentFamiliarity,
+                            familiarity_response: trialObj.currentFamiliarity,
                             familiarity_clicked: trialObj.familiarityClicked,
-                            main_rating: trialObj.currentMainRating,
-                            main_slider_moved: trialObj.mainSliderMoved,
-                            similarity_rating: secondarySlider ? trialObj.currentSecondaryRating : null,
-                            similarity_slider_moved: trialObj.secondarySliderMoved,
+                            confidence_response: confidenceSlider ? trialObj.currentConfidenceRating : null,
+                            competence_slider_moved: block_num === 1 ? trialObj.competenceSliderMoved : null,
+                            vote_slider_moved: block_num === 2 ? trialObj.voteSliderMoved : null,
+                            confidence_slider_moved: trialObj.confidenceSliderMoved,
                             // compute RT since finishTrial is called programmatically
                             rt: Math.round(performance.now() - trialObj.responseStartTime)
                         };
+                        // Set competence_response or vote_response based on block
+                        if (block_num === 1) {
+                            trialData.competence_response = trialObj.currentCompetenceRating;
+                        } else {
+                            trialData.vote_response = trialObj.currentVoteRating;
+                        }
                         
                         console.log('Submitting rating trial data:', trialData);
                         jsPsych.finishTrial(trialData);
@@ -983,23 +1086,31 @@
             on_finish: function(data) {
                 // Data is now passed from finishTrial, but also set from trial object as backup
                 // Use 'in' checks to allow '0' and other falsy values
-                if (!('familiarity_rating' in data) || data.familiarity_rating === null) {
-                    data.familiarity_rating = this.currentFamiliarity;
+                if (!('familiarity_response' in data) || data.familiarity_response === null) {
+                    data.familiarity_response = this.currentFamiliarity;
                 }
-                if (!('main_rating' in data) || data.main_rating === null) {
-                    data.main_rating = this.currentMainRating;
+                // Set competence_response or vote_response based on block
+                if (block_num === 1) {
+                    if (!('competence_response' in data) || data.competence_response === null) {
+                        data.competence_response = this.currentCompetenceRating;
+                    }
+                } else {
+                    if (!('vote_response' in data) || data.vote_response === null) {
+                        data.vote_response = this.currentVoteRating;
+                    }
                 }
-                if (!('similarity_rating' in data) || data.similarity_rating === null) {
-                    data.similarity_rating = this.currentSecondaryRating;
+                if (!('confidence_response' in data) || data.confidence_response === null) {
+                    data.confidence_response = this.currentConfidenceRating;
                 }
 
                 // Debug: log rating data for each rating trial (helps verify ratings are recorded)
                 console.log('Rating trial data:', {
                     stimulus_name: data.stimulus_name,
                     block: data.block,
-                    familiarity_rating: data.familiarity_rating,
-                    main_rating: data.main_rating,
-                    similarity_rating: data.similarity_rating,
+                    familiarity_response: data.familiarity_response,
+                    competence_response: data.competence_response,
+                    vote_response: data.vote_response,
+                    confidence_response: data.confidence_response,
                     rt: data.rt
                 });
                 
@@ -1007,8 +1118,18 @@
                 data.reaction_time_ms = data.rt;
                 data.response_time_limit_ms = response_time_limit;
                 
+                // Store rating for free writing component
+                const blockKey = 'block' + block_num;
+                candidateRatings[blockKey][stimulus.name] = {
+                    name: stimulus.name,
+                    trial_type: stimulus.type,
+                    image: stimulus.image,
+                    response: block_num === 1 ? data.competence_response : data.vote_response,
+                    question_type: block_num === 1 ? 'competence' : 'vote'
+                };
+                
                 // Track familiar candidates in block 1 to exclude from later blocks
-                if (block_num === 1 && data.familiarity_rating === '1') {
+                if (block_num === 1 && data.familiarity_response === '1') {
                     familiarCandidates.push(stimulus.name);
                     console.log('Added familiar candidate:', stimulus.name, '- Total familiar:', familiarCandidates.length);
                 }
@@ -1052,14 +1173,19 @@
             choices: ['1', '2', '3', '4', '5', '6', '7'],
             data: {
                 task: 'attention_check',
-                correct_response: correct_key,
+                attention_check_question: 'Press the number ' + correct_key,
+                attention_check_correct_key: correct_key,
                 block: block_num,
                 stimulus_name: null,
                 stimulus_trial_type: null
             },
             on_finish: function(data) {
+                data.attention_check_response = data.response;
+                data.attention_check_correct = data.response === correct_key;
                 data.correct = data.response === correct_key;
                 data.reaction_time_ms = data.rt;
+                // Debug: print correct key and response
+                console.log('Attention Check - Correct key:', correct_key, 'Response:', data.response, 'Correct?:', data.correct);
             }
         };
         
@@ -1121,8 +1247,8 @@
                 task: 'memory_check',
                 stimulus_name: stimulus.name,
                 stimulus_trial_type: stimulus.type,
-                correct_answer: stimulus.check_answer,
-                check_question: stimulus.check_question,
+                memory_check_question: stimulus.check_question,
+                memory_check_correct_answer: stimulus.check_answer,
                 block: block_num
             },
             on_load: function() {
@@ -1145,14 +1271,14 @@
             },
             on_finish: function(data) {
                 // Get response from trial object
-                data.response = this.memoryResponse;
+                data.memory_check_response = this.memoryResponse;
                 // Convert to strings for comparison since CSV values are strings
-                data.correct = data.response === String(data.correct_answer);
-                data.timed_out = data.response === null || data.response === '';
+                data.memory_check_correct = data.memory_check_response === String(data.memory_check_correct_answer);
+                data.memory_check_timed_out = data.memory_check_response === null || data.memory_check_response === '';
                 data.reaction_time_ms = data.rt;
                 console.log('Memory check - Question:', stimulus.check_question, 
-                           '| Response:', data.response, '| Correct answer:', data.correct_answer, 
-                           '| Is correct:', data.correct);
+                           '| Response:', data.memory_check_response, '| Correct answer:', data.memory_check_correct_answer, 
+                           '| Is correct:', data.memory_check_correct);
             }
         };
         
@@ -1160,11 +1286,11 @@
             type: jsPsychHtmlKeyboardResponse,
             stimulus: function() {
                 const last_trial = jsPsych.data.get().last(1).values()[0];
-                if (last_trial.timed_out) {
+                if (last_trial.memory_check_timed_out) {
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
                         '<div style="color: red; font-size: 18px; font-weight: bold; text-align: center;">Too slow! Please respond faster to memory check questions.</div>' +
                         '</div>';
-                } else if (!last_trial.correct) {
+                } else if (!last_trial.memory_check_correct) {
                     return '<div style="display: flex; justify-content: center; align-items: center; height: 100vh;">' +
                         '<div style="color: red; font-size: 18px; font-weight: bold; text-align: center;">Wrong answer! Please pay attention to the biography content.</div>' +
                         '</div>';
@@ -1177,7 +1303,7 @@
             choices: "NO_KEYS",
             trial_duration: function() {
                 const last_trial = jsPsych.data.get().last(1).values()[0];
-                return (last_trial.timed_out || !last_trial.correct) ? 2000 : 1500;
+                return (last_trial.memory_check_timed_out || !last_trial.memory_check_correct) ? 2000 : 1500;
             },
             data: {
                 task: 'memory_check_feedback',
@@ -1190,23 +1316,185 @@
         };
     }
 
+    // Function to create free writing trials for a block
+    function createFreeWritingTrials(block_num) {
+        const blockKey = 'block' + block_num;
+        const ratings = candidateRatings[blockKey];
+        
+        // Filter based on block: block 1 = competence, block 2 = vote
+        const questionType = block_num === 1 ? 'competence' : 'vote';
+        const filteredRatings = Object.values(ratings).filter(r => r.question_type === questionType);
+        
+        // Group by trial type
+        const photoRatings = filteredRatings.filter(r => r.trial_type === 'photo');
+        const bioRatings = filteredRatings.filter(r => r.trial_type === 'bio');
+        const dualRatings = filteredRatings.filter(r => r.trial_type === 'dual');
+        
+        console.log('Free writing - Block', block_num, questionType, 'candidates:', {
+            photo: photoRatings.length,
+            bio: bioRatings.length,
+            dual: dualRatings.length
+        });
+        
+        // Select one candidate from each condition
+        const selectedCandidates = [];
+        if (photoRatings.length > 0) {
+            selectedCandidates.push(jsPsych.randomization.sampleWithoutReplacement(photoRatings, 1)[0]);
+        }
+        if (bioRatings.length > 0) {
+            selectedCandidates.push(jsPsych.randomization.sampleWithoutReplacement(bioRatings, 1)[0]);
+        }
+        if (dualRatings.length > 0) {
+            selectedCandidates.push(jsPsych.randomization.sampleWithoutReplacement(dualRatings, 1)[0]);
+        }
+        
+        console.log('Selected candidates for free writing:', selectedCandidates.map(c => c.name + ' (' + c.trial_type + ')'));
+        
+        // Add introduction screen
+        const introScreen = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div style="max-width: 700px; margin: 100px auto; text-align: center;">' +
+                '<h2>Free Response Section</h2>' +
+                '<p style="font-size: 18px; margin: 30px 0;">You will now be asked to briefly explain your judgment for ' + selectedCandidates.length + ' randomly selected candidates from Block ' + block_num + '.</p>' +
+                '<p style="font-size: 16px;">Please provide a brief explanation of how you formed your opinion.</p>' +
+                '<p style="font-size: 16px; margin-top: 30px;">Press the spacebar to continue.</p>' +
+                '</div>',
+            choices: [' '],
+            data: {
+                task: 'free_writing_intro',
+                block: block_num
+            }
+        };
+        
+        // Create trials for each selected candidate
+        const freeWritingTrials = [introScreen];
+        
+        for (let candidate of selectedCandidates) {
+            const candidateName = formatCandidateName(candidate.name);
+            
+            // Display candidate info based on trial type (show original trial information)
+            let candidateDisplay = '';
+            if (candidate.trial_type === 'photo') {
+                candidateDisplay = '<img src="' + candidate.image + '" class="stimulus-image">' +
+                    '<div class="candidate-name">' + candidateName + '</div>';
+            } else if (candidate.trial_type === 'bio') {
+                const bioText = loadedBios[candidate.name] || 'Bio text not available';
+                candidateDisplay = '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>';
+            } else if (candidate.trial_type === 'dual') {
+                const bioText = loadedBios[candidate.name] || 'Bio text not available';
+                candidateDisplay = '<div class="dual-container">' +
+                    '<img src="' + candidate.image + '" class="stimulus-image">' +
+                    '<div class="candidate-name">' + candidateName + '</div>' +
+                    '<div class="bio-text">' + bioText.replace(/\n/g, '<br>') + '</div>' +
+                    '</div>';
+            }
+            
+            // Create trial
+            const freeWritingTrial = {
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: function() {
+                    // Determine question text based on block
+                    const questionText = block_num === 1 
+                        ? 'How good do you think this person would be as a member of congress?'
+                        : 'In general, how likely would you be to vote for this person as a U.S. House Representative?';
+                    
+                    return '<div class="free-writing-container">' +
+                        '<div id="validation-message" class="validation-warning" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; display: none;"></div>' +
+                        candidateDisplay +
+                        '<div class="rating-display">' +
+                        '<em>Question: ' + questionText + '</em><br>' +
+                        'Your rating: <strong>' + candidate.response + '</strong> out of 7<br>' +
+                        '</div>' +
+                        '<div class="free-writing-prompt">Please briefly explain how you made your judgment/decision:</div>' +
+                        '<textarea class="free-writing-textarea" id="free-response" placeholder="Type your explanation here..."></textarea>' +
+                        '<button id="submit-button" class="familiarity-button" style="margin-top: 20px; padding: 15px 40px; font-size: 16px;">Submit</button>' +
+                        '</div>';
+                },
+                choices: "NO_KEYS",
+                data: {
+                    task: 'free_writing',
+                    stimulus_name: candidate.name,
+                    stimulus_trial_type: candidate.trial_type,
+                    block: block_num,
+                    competence_response: candidate.question_type === 'competence' ? candidate.response : null,
+                    vote_response: candidate.question_type === 'vote' ? candidate.response : null
+                },
+                on_load: function() {
+                    const trialObj = this;
+                    const textarea = document.getElementById('free-response');
+                    const validationMessage = document.getElementById('validation-message');
+                    const submitButton = document.getElementById('submit-button');
+                    
+                    const submitHandler = function() {
+                        const response = textarea.value.trim();
+                        
+                        // Validate that something was written (at least 10 characters)
+                        if (response.length < 10) {
+                            validationMessage.textContent = 'Please provide a more detailed explanation.';
+                            validationMessage.style.display = 'block';
+                            return;
+                        }
+                        
+                        // If valid, end trial
+                        submitButton.removeEventListener('click', submitHandler);
+                        jsPsych.finishTrial({
+                            free_response: response,
+                            response_length: response.length
+                        });
+                    };
+                    
+                    // Clear validation message when user starts typing
+                    textarea.addEventListener('input', function() {
+                        if (validationMessage) {
+                            validationMessage.textContent = '';
+                            validationMessage.style.display = 'none';
+                        }
+                    });
+                    
+                    submitButton.addEventListener('click', submitHandler);
+                    trialObj.submitHandler = submitHandler;
+                },
+                on_finish: function(data) {
+                    data.reaction_time_ms = data.rt;
+                    console.log('Free writing response:', {
+                        candidate: data.stimulus_name,
+                        competence_response: data.competence_response,
+                        vote_response: data.vote_response,
+                        response_length: data.response_length
+                    });
+                    
+                    // Clean up event listener
+                    if (this.submitHandler) {
+                        const submitButton = document.getElementById('submit-button');
+                        if (submitButton) {
+                            submitButton.removeEventListener('click', this.submitHandler);
+                        }
+                    }
+                }
+            };
+            
+            freeWritingTrials.push(freeWritingTrial);
+        }
+        
+        return freeWritingTrials;
+    }
+
     // Function to build a single block
     function buildBlock(block, pushToTimeline = true) {
         // Block instructions
         let instructionText = '<h2>Block ' + (block + 1) + ' of 2</h2>';
         
         if (block === 0) {
-            // Block 1: mention both familiarity and main question
+            // Block 1: mention familiarity, main question, and confidence
             instructionText += '<p>For this block, you will answer the following questions:</p>' +
                 '<p style="font-size: 18px; font-weight: bold; margin: 20px;">1. Familiarity: Before participating, how familiar were you with this person?</p>' +
                 '<p style="font-size: 18px; font-weight: bold; margin: 20px;">2. ' + questions[block].text + '</p>' +
+                '<p style="font-size: 18px; font-weight: bold; margin: 20px;">3. ' + questions[block].confidenceQuestion.text + '</p>' +
                 '<p>Press the spacebar to begin.</p>';
         } else {
-            // Block 2: show main question and secondary question (similarity for bio/dual trials)
-            instructionText += '<p>For this block, you will answer the following question(s):</p>' +
-                '<p style="font-size: 18px; font-weight: bold; margin: 20px;">1. ' + questions[block].text + '</p>' +
-                '<p style="font-size: 18px; font-weight: bold; margin: 20px;">2. ' + questions[block].secondaryQuestion.text + '</p>' +
-                '<p>Note: You only need to answer one question in some trials, while in others you will answer both.</p>' +
+            // Block 2: show only main question (vote intention)
+            instructionText += '<p>For this block, you will answer the following question:</p>' +
+                '<p style="font-size: 18px; font-weight: bold; margin: 20px;">' + questions[block].text + '</p>' +
                 '<p>Press the spacebar to begin.</p>';
         }
         
@@ -1305,6 +1593,8 @@
         // Either push to main timeline or return the block timeline
         if (pushToTimeline) {
             blockTimeline.forEach(t => timeline.push(t));
+        } else {
+            return blockTimeline;
         }
         return blockTimeline;
     }
@@ -1314,7 +1604,28 @@
         // Build Block 1
         buildBlock(0);
         
-        // Add break screen
+        // Add coordinator to trigger free writing for Block 1, then break screen, then Block 2
+        const coordinator = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '',
+            trial_duration: 0,
+            choices: "NO_KEYS",
+            data: {
+                task: 'free_writing_coordinator',
+                block: 1
+            },
+            on_finish: function() {
+                // Add Block 1 free writing trials
+                const freeWriting1 = createFreeWritingTrials(1);
+                freeWriting1.forEach(t => jsPsych.addNodeToEndOfTimeline(t));
+                
+                // Add break screen
+                jsPsych.addNodeToEndOfTimeline(break_screen);
+            }
+        };
+        timeline.push(coordinator);
+        
+        // Define break screen (will be added dynamically by coordinator)
         const break_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Break</h2>' +
@@ -1347,15 +1658,35 @@
                 block2Timeline.forEach(trial => {
                     jsPsych.addNodeToEndOfTimeline(trial);
                 });
-
-                // After we add Block 2 trials, append the final screen so it appears last
-                console.log('Appending final screen after Block 2');
-                jsPsych.addNodeToEndOfTimeline(final_screen);
+                
+                // Add free writing trigger for Block 2
+                const freeWriting2Placeholder = {
+                    type: jsPsychHtmlKeyboardResponse,
+                    stimulus: '',
+                    trial_duration: 0,
+                    choices: "NO_KEYS",
+                    data: {
+                        task: 'free_writing_trigger',
+                        block: 2
+                    },
+                    on_finish: function() {
+                        // Create and add free writing trials for Block 2
+                        const freeWritingTrials = createFreeWritingTrials(2);
+                        freeWritingTrials.forEach(t => {
+                            jsPsych.addNodeToEndOfTimeline(t);
+                        });
+                        
+                        // After free writing, add the final screen
+                        console.log('Appending final screen after Block 2 free writing');
+                        jsPsych.addNodeToEndOfTimeline(final_screen);
+                    }
+                };
+                jsPsych.addNodeToEndOfTimeline(freeWriting2Placeholder);
             }
         };
-        timeline.push(break_screen);
+        // NOTE: break_screen is added dynamically by coordinator, not pushed here
         
-        // Define final screen (will be added after Block 2 is inserted)
+        // Define final screen (will be added after Block 2 free writing completes)
         const final_screen = {
             type: jsPsychHtmlKeyboardResponse,
             stimulus: '<h2>Thank you!</h2>' +
@@ -1364,8 +1695,7 @@
                 '<p>Press any key to finish. After pressing the key, please <b>wait a moment while we process your data</b>. You will be noticed when we finished and be redirected to SONA.</p>',
             choices: "ALL_KEYS"
         };
-        // NOTE: Do not push the final_screen yet. We'll append it after building Block 2
-        //       inside the break screen's on_finish so the final screen appears last.
+        // NOTE: final_screen is now added after Block 2 free writing completes
     }
 
     // Load materials, preload bios, build blocks, then run the experiment

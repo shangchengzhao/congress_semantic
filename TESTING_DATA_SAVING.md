@@ -87,6 +87,77 @@ https://your-server.com/path/to/experiment.html
 
 ## Common Issues and Solutions
 
+### Issue: "Not Found" or 404 error when accessing test files
+
+**Causes:**
+- Test files not uploaded to server yet
+- Files uploaded to wrong directory
+- Incorrect URL path
+
+**Solutions:**
+```bash
+# 1. Find where your experiment.html is located on the server
+ssh username@yeslab-survey.psych.ucsb.edu
+find /home/www -name "experiment.html"
+
+# 2. Navigate to that directory
+cd /home/www/apps/yeslab-survey.psych.ucsb.edu/public_html/congress_semantic
+
+# 3. Upload test files to the same directory (from your local machine)
+scp test_server_config.php test_save_data.html username@yeslab-survey.psych.ucsb.edu:/home/www/apps/yeslab-survey.psych.ucsb.edu/public_html/congress_semantic/
+
+# 4. Verify files exist
+ls -la test_*.php test_*.html
+```
+
+### Issue: "Data directory is NOT writable" after chmod 755
+
+**Cause:**
+- The web server user (e.g., `www-data`, `apache`, `nobody`) needs write permission
+- `chmod 755` only gives write permission to the owner, not to the web server user
+
+**Solutions (try in order):**
+
+**Option 1: Use chmod 777 (easiest, less secure)**
+```bash
+cd /home/www/apps/yeslab-survey.psych.ucsb.edu/public_html/congress_semantic
+chmod 777 data/
+
+# Then refresh the test_server_config.php page in your browser
+```
+
+**Option 2: Change ownership to web server user (more secure)**
+```bash
+# First, find out what user Apache runs as:
+ps aux | grep apache
+# or
+ps aux | grep httpd
+
+# Common web server users: www-data, apache, nobody, _www
+
+# Then change ownership (replace 'www-data' with your web server user):
+sudo chown www-data:www-data data/
+chmod 755 data/
+```
+
+**Option 3: Add web server user to your group**
+```bash
+# Find your username and the web server user
+whoami
+ps aux | grep apache | head -1
+
+# Add web server user to your group (ask your server admin if needed)
+sudo usermod -a -G yourusername www-data
+
+# Then set group write permission:
+chmod 775 data/
+```
+
+**After applying the fix:**
+1. Refresh `test_server_config.php` in your browser
+2. You should see: "✓ Data directory is writable"
+3. You should see: "✓ Successfully wrote test file"
+
 ### Issue: "Failed to save data" or 500 error
 
 **Causes:**

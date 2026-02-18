@@ -292,7 +292,7 @@
 <script>
 
     // ===== EXPERIMENT VERSION =====
-    const EXPERIMENT_VERSION = '30';
+    const EXPERIMENT_VERSION = '31';
     console.log('====================================');
     console.log('Experiment Version:', EXPERIMENT_VERSION);
     console.log('====================================');
@@ -668,6 +668,78 @@
     };
     timeline.push(welcome);
     
+    // Consent screen
+    const consent = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div style="max-width: 800px; margin: 50px auto; text-align: left; padding: 0 20px;">' +
+            '<h2 style="text-align: center;">Consent for Participation in a Research Project Study</h2>' +
+            '<p><b>Title:</b> Social perception study<br>' +
+            '<b>Investigator:</b> Hongbo Yu, Ph.D., University of California Santa Barbara, Department of Psychological and Brain Sciences, Santa Barbara, CA 93106<br>' +
+            '<b>Protocol Number:</b> 2-24-0611</p>' +
+            '<p><b>Purpose:</b> You are invited to take part in a research study designed to look at how people make social judgments and decisions. You are being asked to participate in this study because we are interested in these processes in a wide variety of people. The purpose of this study is to advance our understanding of how individual differences in cognitive functioning contribute to social behavior.</p>' +
+            '<p><b>Procedures:</b> If you agree to participate, you will see some human face pictures and be asked some questions about them. You may withdraw from this study at any point by closing out of the browser window. Your participation will last about 10 minutes and you will be granted 1 credit/hour for your participation in this study.</p>' +
+            '<p><b>Risks and Benefits:</b> There are no known or anticipated risks associated with this study. Although this study will not benefit you personally, we hope that our results will add to the knowledge about how people make decisions about positive and negative outcomes for themselves and for other people.</p>' +
+            '<p><b>Confidentiality:</b> All of your responses will be anonymous. Only the researchers involved in this study and those responsible for research oversight (such as representatives of the UCSB Human Subjects Committee) will have access to any information that could identify you/that you provide. Your responses will be numbered and the code linking your number with your name will be stored in a separate file. When we publish any results from this study we will do so in a way that does not identify you. We may also share the data with other researchers so that they can check the accuracy of our conclusions, but will only do so if we are confident that your confidentiality is protected. The researcher will not know your name, and no identifying information will be connected to your survey answers in any way. The survey is therefore anonymous. However, your account is associated with an online experiment platform id that the researcher has to be able to see in order to pay you, and in some cases these numbers are associated with public profiles which could, in theory, be searched. For this reason, though the researcher will not be looking at anyone\'s public profiles, the fact of your participation in the research (as opposed to your actual survey responses) is technically considered "confidential" rather than truly anonymous.</p>' +
+            '<p><b>Voluntary Participation:</b> Your participation in this study is voluntary. You are free to decline to participate, to end your participation at any time for any reason, or to refuse to answer any individual question without penalty.</p>' +
+            '<p><b>Questions:</b> If you have any questions about this study, you may contact the research associate who is in charge of this research study. You can reach out by sending email to psych-yeslab.study@ucsb.edu. If you have any questions regarding your rights and participation as a research subject, please contact the Human Subjects Committee at (805) 893-3807 or hsc@research.ucsb.edu, or write to the University of California, Human Subjects Committee, Office of Research, Santa Barbara, CA 93106-2050</p>' +
+            '<div style="margin-top: 40px; text-align: center;">' +
+            '<p style="font-size: 18px; font-weight: bold;">Do you consent to participate in this study?</p>' +
+            '<div style="display: flex; justify-content: center; gap: 40px; margin-top: 30px;">' +
+            '<button class="familiarity-button" style="padding: 20px 60px; font-size: 18px;" data-response="agree">I agree</button>' +
+            '<button class="familiarity-button" style="padding: 20px 60px; font-size: 18px;" data-response="disagree">I do not agree</button>' +
+            '</div>' +
+            '<input type="hidden" id="consent-response" value="">' +
+            '</div>' +
+            '</div>',
+        choices: "NO_KEYS",
+        data: {
+            task: 'consent'
+        },
+        on_load: function() {
+            const trialObj = this;
+            trialObj.consentResponse = null;
+            
+            const buttons = document.querySelectorAll('[data-response]');
+            const responseInput = document.getElementById('consent-response');
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const response = this.getAttribute('data-response');
+                    responseInput.value = response;
+                    trialObj.consentResponse = response;
+                    jsPsych.finishTrial();
+                });
+            });
+        },
+        on_finish: function(data) {
+            data.consent_given = this.consentResponse;
+            data.consented = this.consentResponse === 'agree';
+        }
+    };
+    timeline.push(consent);
+    
+    // End experiment if consent not given
+    const no_consent_end = {
+        timeline: [{
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div style="max-width: 600px; margin: 100px auto; text-align: center;">' +
+                '<h2>Thank You</h2>' +
+                '<p style="font-size: 18px; margin: 40px 0;">You have chosen not to participate in this study.</p>' +
+                '<p style="font-size: 16px;">If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.</p>' +
+                '<p style="font-size: 16px; margin-top: 40px;">You may close this window.</p>' +
+                '</div>',
+            choices: "NO_KEYS",
+            data: {
+                task: 'no_consent_end'
+            }
+        }],
+        conditional_function: function() {
+            const last_trial = jsPsych.data.get().last(1).values()[0];
+            return !last_trial.consented;
+        }
+    };
+    timeline.push(no_consent_end);
+    
     // Eligibility check
     const eligibility_check = {
         type: jsPsychHtmlKeyboardResponse,
@@ -730,7 +802,7 @@
     };
     timeline.push(ineligible_end);
     
-    // Instructions (only shown if eligible)
+    // Instructions (only shown if eligible and consented)
     const instructions = {
         timeline: [{
             type: jsPsychInstructions,
@@ -763,8 +835,11 @@
             show_clickable_nav: true
         }],
         conditional_function: function() {
-            const last_trial = jsPsych.data.get().last(2).values()[1];
-            return last_trial.voting_eligible;
+            const last_trials = jsPsych.data.get().last(4).values();
+            // Find the eligibility trial and consent trial
+            const eligibilityTrial = last_trials.find(t => t.task === 'eligibility_check');
+            const consentTrial = last_trials.find(t => t.task === 'consent');
+            return eligibilityTrial && eligibilityTrial.voting_eligible && consentTrial && consentTrial.consented;
         }
     };
     timeline.push(instructions);

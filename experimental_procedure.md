@@ -5,7 +5,7 @@
 ---
 
 ## Overview
-This experiment measures social impressions of congressional candidates across two dimensions: congressional competence and voting intention/similarity. Participants view candidate information (photos, biographical text, or both) and provide ratings on 7-point scales. Participants are randomly assigned to one of three trial type conditions that determine the distribution of photo/bio/dual trials throughout the experiment.
+This experiment measures social impressions of congressional candidates across two dimensions: congressional competence and voting intention. Participants view candidate information (photos, biographical text, or both) and provide ratings on 7-point scales. Participants are randomly assigned to one of five participant groups (1-5) and one of three trial type conditions that determine which stimuli are shown and how they are presented (photo/bio/dual) throughout the experiment.
 
 ---
 
@@ -74,24 +74,27 @@ Alerts participants to focus attention on the center of the screen before stimul
 ### Structure:
 The experiment consists of **2 blocks**, each with different rating questions.
 
+### Participant Group Assignment:
+Participants are randomly assigned to one of five participant groups (1, 2, 3, 4, or 5) at the start of the experiment. This determines which subset of candidates they will see.
+
 ### Trial Type Assignment:
-Participants are randomly assigned to one of three trial type conditions (trial_type1, trial_type2, or trial_type3) at the start of the experiment. This assignment determines which stimuli are presented as photo/bio/dual trials throughout both blocks, and is tracked in the `assigned_trial_type` variable in the data.
+Participants are randomly assigned to one of three trial type conditions (trial_type1, trial_type2, or trial_type3) at the start of the experiment. This assignment determines which stimuli are presented as photo/bio/dual trials throughout both blocks. These assignments are tracked in the `assigned_group` and `assigned_trial_type` variables in the data.
 
 ### Block Questions:
 
 **Block 1: Congressional Competence**
-- Primary Question: "How good do you think this person would be as a member of congress?"
-  - Scale: 1 (Not at all) to 7 (Very much)
 - Familiarity Question: "Before participating, how familiar were you with this person?"
   - Response Options: 
     - "I do not know anything about this person" (coded as 0)
     - "I know who this person is or have heard about them" (coded as 1)
   - **Important**: Candidates marked as familiar (value = 1) are excluded from Block 2
-
-**Block 2: Voting Intention and Similarity**
-- Primary Question: "In general, how much would you like to vote for this person?"
+- Primary Question: "How good do you think this person would be as a member of congress?"
   - Scale: 1 (Not at all) to 7 (Very much)
-- Secondary Question (for bio and dual trials only): "How similar do you consider yourself to this person in ideology, political views, and background?"
+- Confidence Question: "How confident are you in your judgment?"
+  - Scale: 1 (Not at all) to 7 (Very much)
+
+**Block 2: Voting Intention**
+- Primary Question: "In general, how likely would you be to vote for this person as a U.S. House Representative?"
   - Scale: 1 (Not at all) to 7 (Very much)
 - **Stimuli Filter**: Only candidates marked as unfamiliar in Block 1 are shown in Block 2
 
@@ -127,8 +130,19 @@ Within each block:
   - Timed out: "Too slow! Please respond faster to memory check questions." (2 seconds)
   - Correct: No feedback, continues immediately
 
+### Free Writing Component:
+- **Timing**: Appears at the end of each block, before the break/final screen
+- **Selection**: One candidate is randomly selected from each trial type (photo, bio, dual) that the participant rated in that block
+- **Format**: For each selected candidate, participants see:
+  - The candidate's photo (if applicable to trial type)
+  - Their rating response displayed
+  - A free-response text area
+- **Prompt**: "Please briefly explain the reasoning behind your judgment."
+- **Submission**: Participants click "Continue" button to proceed to next candidate
+- **Purpose**: Collects qualitative data about participants' decision-making process
+
 ### Breaks:
-- Short break screen appears between blocks
+- Short break screen appears between blocks (after Block 1 free writing)
 - Message: "You have completed block 1 of 2. Take a short break if needed."
 - Participants press spacebar to continue
 
@@ -141,9 +155,10 @@ Participants see 3 instruction pages before starting:
 
 **Page 1: Welcome and Setup Requirements**
 ```
-VERSION 8. Welcome to the Social Impression Rating Task
+Welcome to the Social Impression Rating Task
 
-In this experiment, you will see photos and/or biographies of political candidates.
+In this experiment, you will see photos and/or biographies of candidate in the election 
+for the U.S. House of Representatives.
 
 Your task is to rate your impression of each person on different dimensions.
 
@@ -151,6 +166,8 @@ Before you begin, please ensure:
 • You are in a quiet space where you can focus without distractions
 • You are using a computer (not a mobile device or tablet)
 • You are using a compatible browser (Chrome, Safari, Firefox, or Edge recommended)
+
+If you have any questions, please contact the researcher at psych-yeslab.study@ucsb.edu.
 
 Press the Next button to continue.
 ```
@@ -192,8 +209,28 @@ Important: Please do your best to make quick and legitimate responses, or you wi
 There will be occasional attention check questions and memory check questions - please read 
 carefully!
 
+At the end of each block, you will be asked to briefly explain your judgment for a few randomly 
+selected candidates.
+
 Press the Next button to begin.
 ```
+
+### Eligibility Check:
+
+Before the main experiment begins, participants are asked:
+
+**Question:** "At present, do you have the legal right to vote in the U.S.?"
+
+**Response Options:**
+- Yes (allows participant to continue)
+- No (ends experiment with message: "Thank you for your interest. This study is only open to individuals who currently have the legal right to vote in the U.S.")
+
+**Data Collected:**
+- **task**: "eligibility_check"
+- **eligible**: participant's response ("yes" or "no")
+- **voting_eligible**: boolean (true if "yes", false if "no")
+
+Only participants who answer "Yes" proceed to the main experiment.
 
 ### Block Instructions:
 
@@ -207,6 +244,8 @@ For this block, you will answer the following questions:
 
 2. How good do you think this person would be as a member of congress?
 
+3. How confident are you in your judgment?
+
 Press the spacebar to begin.
 ```
 
@@ -214,14 +253,9 @@ Press the spacebar to begin.
 ```
 Block 2 of 2
 
-For this block, you will answer the following question(s):
+For this block, you will answer the following question:
 
-1. In general, how much would you like to vote for this person?
-
-2. How similar do you consider yourself to this person in ideology, political views, and 
-   background?
-
-Note: You only need to answer one question in some trials, while in others you will answer both.
+In general, how likely would you be to vote for this person as a U.S. House Representative?
 
 Press the spacebar to begin.
 ```
@@ -232,10 +266,10 @@ Press the spacebar to begin.
 - Familiarity Question: "Before participating, how familiar were you with this person?"
   - Button Options: "I do not know anything about this person" | "I know who this person is or have heard about them"
 - Primary Question: "How good do you think this person would be as a member of congress?"
+- Confidence Question: "How confident are you in your judgment?"
 
-**Block 2 - Voting Intention and Similarity:**
-- Primary Question: "In general, how much would you like to vote for this person?"
-- Secondary Question (bio and dual trials only): "How similar do you consider yourself to this person in ideology, political views, and background?"
+**Block 2 - Voting Intention:**
+- Primary Question: "In general, how likely would you be to vote for this person as a U.S. House Representative?"
 
 ### Response Scales:
 
@@ -247,7 +281,7 @@ Press the spacebar to begin.
 - Visual feedback: Selected button highlighted in green
 - Required: Must click a button before submitting
 
-**All Rating Questions:**
+**All Rating Questions (Competence, Confidence, Vote):**
 - Type: 7-point slider scale
 - Range: 1 to 7
 - Labels:
@@ -289,57 +323,110 @@ Participant enters responses and presses SPACEBAR
 Next trial begins
 ```
 
+### Overall Experiment Flow:
+```
+Welcome Screen
+    ↓
+Eligibility Check
+    ↓
+[If ineligible: End experiment]
+    ↓
+Instructions (3 pages)
+    ↓
+Block 1 Instructions
+    ↓
+Block 1 Trials (with attention & memory checks)
+    ↓
+Block 1 Free Writing (3 candidates)
+    ↓
+Break Screen
+    ↓
+Block 2 Instructions
+    ↓
+Block 2 Trials (with attention & memory checks)
+    ↓
+Block 2 Free Writing (3 candidates)
+    ↓
+Data Saving & SONA Redirect (if applicable)
+```
+
 ---
 
 ## Data Collection
 
 ### Participant Identification:
 - **participant_id**: Unique identifier generated at experiment start (format: P[timestamp]_[random string])
+- **assigned_group**: Participant group (1, 2, 3, 4, or 5) assigned to participant
 - **assigned_trial_type**: Trial type condition (1, 2, or 3) assigned to participant
+- **experiment_version**: Version number of the experiment (currently 29)
+- **experiment_start_time**: Timestamp when experiment started
+- **sona_survey_code**: SONA survey code from URL parameter (or 'NO_SONA_CODE')
 
 ### Collected Variables for Rating Trials:
+- **task**: "rating"
 - **stimulus_name**: Candidate's name (formatted with underscores, e.g., "Adam_Frisch")
-- **trial_type**: photo, bio, or dual
+- **stimulus_trial_type**: photo, bio, or dual
 - **block**: 1 or 2
-- **question**: Text of the rating question
-- **rating**: Main rating (1-7) from slider
-- **secondary_rating**: Similarity rating (1-7) from slider (Block 2, bio/dual trials only; null otherwise)
-- **familiarity_rating**: Familiarity response (0 or 1, Block 1 only; null for Block 2)
+- **question**: Text of the main rating question
+- **competence_response**: Main rating (1-7) for Block 1; null for Block 2
+- **vote_response**: Main rating (1-7) for Block 2; null for Block 1
+- **familiarity_response**: Familiarity response (0 or 1, Block 1 only; null for Block 2)
   - 0 = "I do not know anything about this person"
   - 1 = "I know who this person is or have heard about them"
-- **rt**: Reaction time (milliseconds) for response submission
+- **confidence_response**: Confidence rating (1-7) for Block 1 only; null for Block 2
+- **reaction_time_ms**: Reaction time (milliseconds) for response submission
+- **response_time_limit_ms**: Time limit allowed for this trial type
 - **responded_on_time**: Boolean indicating if response was within time limit
-- **phase**: "stimulus_presentation" or "rating"
-- Standard jsPsych metadata (trial_index, time_elapsed, etc.)
+- Standard jsPsych metadata (trial_index, time_elapsed, rt, etc.)
 
 ### Collected Variables for Attention Checks:
 - **task**: "attention_check"
-- **correct_response**: The number key that was requested (1-7)
-- **response**: The key the participant pressed
-- **correct**: Boolean indicating if response matched correct_response
+- **attention_check_question**: Text of the attention check instruction
+- **attention_check_correct_key**: The number key that was requested (1-7)
+- **attention_check_response**: The key the participant pressed
 - **block**: 1 or 2
 - **rt**: Reaction time (milliseconds)
 
 ### Collected Variables for Memory Checks:
 - **task**: "memory_check"
 - **stimulus_name**: Candidate's name for the memory check
-- **check_question**: Text of the memory question (e.g., "Did this person serve in the military?")
-- **correct_answer**: Correct answer (0 for No, 1 for Yes)
-- **response**: Participant's response (0 for No, 1 for Yes, null if timed out)
-- **correct**: Boolean indicating if response was correct
+- **memory_check_question**: Text of the memory question (e.g., "Did this person serve in the military?")
+- **memory_check_correct_answer**: Correct answer (0 for No, 1 for Yes)
+- **memory_check_response**: Participant's response (0 for No, 1 for Yes, null if timed out)
+- **memory_check_correct**: Boolean indicating if response was correct
 - **timed_out**: Boolean indicating if participant did not respond in time
 - **block**: 1 or 2
 - **rt**: Reaction time (milliseconds)
 
+### Collected Variables for Free Writing Trials:
+- **task**: "free_writing"
+- **stimulus_name**: Candidate's name
+- **stimulus_trial_type**: photo, bio, or dual (the trial type of the original rating)
+- **block**: 1 or 2
+- **rating_given**: The original rating value (competence for Block 1, vote for Block 2)
+- **free_response**: Participant's text explanation
+- **rt**: Time spent on free writing response (milliseconds)
+
 ### Data Storage:
-- **Primary**: Automatically sent to Google Sheets via web app script
-  - URL: https://script.google.com/macros/s/AKfycbyrOyKpRFHRUUpnRsNcsXDY4sc4p_zLFs2Zoahu-vEh_vVb8dUbe8Hp9EOOvf7T0bDe/exec
+- **Primary**: Automatically sent to PHP backend (save_data.php)
   - Method: POST request with JSON data
-  - Confirmation: Alert message on successful upload
-- **Backup**: CSV file automatically downloads to participant's computer
-  - Filename format: `congress_semantic_data_[timestamp].csv`
-  - Trigger: Automatic download on experiment completion
-- **Display**: Full data shown on screen as CSV text at experiment end
+  - Response: JSON with success status, filename, and row count
+  - On success: Redirects to SONA for credit (if survey code provided) or shows completion message
+  - On error: Attempts to redirect to SONA anyway with warning, or shows error message
+- **Server Storage**: CSV file saved on server in data/ directory
+  - Filename format: `participant_[participantID]_[timestamp]_v[version].csv`
+  - One file per participant with all trial data
+
+### SONA Integration:
+- **Survey Code**: Extracted from URL parameter `?id=XXXXXX`
+  - If present: Stored as `sona_survey_code` in all data rows
+  - If absent: Stored as 'NO_SONA_CODE'
+- **Completion URL**: https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=4708&credit_token=3f94872037f940acbbe8bb7a6325cd81&survey_code=
+  - Survey code automatically appended from URL parameter
+- **Redirect Behavior**:
+  - On successful data save: Shows alert "Thank you for completing the experiment! You will now be redirected to SONA to receive credit." then redirects
+  - On data save error: Offers option to continue to SONA anyway with warning
+  - No SONA code present: Shows completion message without redirect
 
 ---
 
@@ -362,30 +449,49 @@ Next trial begins
 - Materials loaded from `materials.csv` file
 - Bio texts loaded from `bio/` directory
 - Images preloaded before experiment begins
+- Participant group assignment filters stimuli by `participant_group` column in CSV
 - Trial type assignment based on `trial_type1`, `trial_type2`, or `trial_type3` columns in CSV
+
+### Test Mode:
+The experiment includes a TEST_MODE constant that can be enabled for faster testing:
+- **When enabled** (TEST_MODE = true):
+  - Stimulus presentation time reduced to 0ms (instant display)
+  - Number of candidates limited to 5 random selections
+  - All other functionality remains the same
+- **When disabled** (TEST_MODE = false):
+  - Normal presentation times (2s for photos, 10s for bio/dual)
+  - All candidates from materials.csv are used
+  - Production-ready settings
+- **Current setting in code**: TEST_MODE = true (should be set to false for actual data collection)
 
 ---
 
 ## Experiment Duration
 
 ### Estimated Time:
+- **Eligibility check**: ~5 seconds
+- **Instructions**: ~1-2 minutes (3 pages)
 - **Per trial**: 
   - Photo trials: ~5-25 seconds (2s presentation + up to 20s response)
   - Bio/Dual trials: ~15-130 seconds (10s presentation + up to 120s response)
 - **Memory checks**: ~2-12 seconds (10s time limit + possible 2s feedback)
 - **Attention checks**: ~2-5 seconds (response + possible 2s feedback)
+- **Free writing** (per candidate): ~30-120 seconds (typically 3 candidates per block)
 - **Per block**: Varies based on number and types of trials assigned to participant
-- **Total experiment**: ~15-40 minutes (including instructions, breaks, and variation based on trial types)
+- **Break between blocks**: ~10-30 seconds
+- **Total experiment**: ~20-50 minutes (including instructions, breaks, and variation based on trial types)
 
 Note: Actual duration depends on:
+- Participant's assigned group (determines how many stimuli)
 - Participant's assigned trial type condition
 - Number of stimuli in materials.csv
 - Number of candidates marked as familiar in Block 1 (affects Block 2 length)
 - Response speed
+- Time spent on free writing responses
 
 ---
 
 ## Document Version
 - **Created**: November 11, 2025
-- **Last Updated**: November 26, 2025
-- **Experiment Version**: 8.0
+- **Last Updated**: February 18, 2026
+- **Experiment Version**: 29
